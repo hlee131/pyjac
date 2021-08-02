@@ -11,7 +11,6 @@ typedef enum tt {
 
 	// keywords
 	FUNC_TOK, RET_TOK, IF_TOK, WHILE_TOK, FOR_TOK,
-	WHERE_TOK, IN_TOK, 
 
 	// terminators
 	// END_TOK is emitted for a newline of same indentation
@@ -59,5 +58,7 @@ typedef struct l {
 } Lexer;
 
 Lexer* init_lexer(char* src);
+void free_lexer(Lexer* lexer); 
 void next(Lexer* lexer); 
 void detect_whitespace(Lexer* lexer); 
+int lex_alnum(Lexer* lexer); 

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h> 
+#include <ctype.h>
 
 #include "includes/lexer.h" 
 
@@ -18,6 +19,11 @@ Lexer* init_lexer(char* src) {
 	l->curr_tok.tok_type = NULL_TOK;
 
 	return l; 
+}
+
+void free_lexer(Lexer* lexer) {
+	free(lexer->src);
+	free(lexer); 
 }
 
 void next(Lexer* lexer) {
@@ -99,6 +105,49 @@ void next(Lexer* lexer) {
 	}
 	
 	lexer->src++; 
+}
+
+// lex tokens that contain characters and numbers, i.e. literals, types, booleans,
+// and keywords
+// returns 1 if a token is identified else 0 
+int lex_alnum(Lexer* lexer) {
+
+	const char* keywords[][] = {
+		{"Int", INT_T_TOK}, {"Str", STR_T_TOK}, {"Double", DOUBLE_T_TOK},
+		{"Bool" BOOL_T_TOK}, {"Arr", ARR_T_TOK}, {"TRUE", TRUE_TOK},
+		{"FALSE", FALSE_TOK}, {"func", FUNC_TOK}, {"ret", RET_TOK}, 
+		{"if", IF_TOK}, {"while", WHILE_TOK}, {"for", FOR_TOK}
+	}
+
+	if (*(lexer->src) == '"') {
+		lexer->curr_tok.tok_start = ++(lexer->src);
+		lexer->curr_tok.tok_type = STR_L_TOK;
+
+		while (*(lexer->src) != '"' && *(lexer->src) != 0) {
+			lexer->curr_tok.tok_len++;
+			lexer->src++; 
+		}
+		// need one more src increment
+	} else if (isaplha(*(lexer->src))) {
+		lexer->curr_tok.tok_start = lexer->src;
+
+		while (isalnum(*(lexer->src))) {
+			lexer->curr_tok.tok_len++;
+			lexer->src++;
+		}
+	} else if (isdigit(*(lexer->src))) {
+		lexer->curr_tok.tok_start = lexer->src;
+		int decimal_used = 0; 
+
+		while (isdigit(*(lexer->src)) || (*(lexer->src) == '.' ^ decimal_used)) {
+			if (*(lexer->src) == '.') decimal_used = 1; 
+			lexer->curr_tok.tok_len++;
+			lexer->src++; 
+		}
+	} else return 0; 
+
+
+
 }
 
 // decides whether to emit ident, dedent, or end token
