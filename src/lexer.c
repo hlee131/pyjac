@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h> 
 #include <ctype.h>
+#include <string.h> 
 
 #include "includes/lexer.h" 
+
+#define len(x) (sizeof(x) / sizeof(x[0]))
 
 Lexer* init_lexer(char* src) {
 	
@@ -48,7 +51,7 @@ void next(Lexer* lexer) {
 	}
 
 	switch (*(lexer->src)) {
-		case '\n': detect_whitespace(lexer); break; 
+		case '\n': lex_whitespace(lexer); break; 
 		case '+':
 			if (lexer->src[1] == '+') {
 				lexer->curr_tok.tok_type = INCR_TOK; 
@@ -107,51 +110,81 @@ void next(Lexer* lexer) {
 	lexer->src++; 
 }
 
+int is_keyword(Lexer* lexer) {
+
+	const struct pair {
+		char* keyword;
+		TokenType keyword_type;
+	} keywords[] = {
+		{"Int", INT_T_TOK}, {"Str", STR_T_TOK}, {"Double", DOUBLE_T_TOK},
+		{"Bool", BOOL_T_TOK}, {"Arr", ARR_T_TOK}, {"TRUE", TRUE_TOK},
+		{"FALSE", FALSE_TOK}, {"func", FUNC_TOK}, {"ret", RET_TOK}, 
+		{"if", IF_TOK}, {"while", WHILE_TOK}, {"for", FOR_TOK},
+		{"var", VAR_TOK} 
+	};
+
+	for (int i = 0; i < len(keywords); i++) {
+		if (memcmp(keywords[i].keyword, 
+			lexer->curr_tok.tok_start, 
+			lexer->curr_tok.tok_len * sizeof(char))) {
+			
+			lexer->curr_tok.tok_type = keywords[i].keyword_type; 
+			return 1; 
+		}
+	}
+
+	return 0; 
+	
+}
+
 // lex tokens that contain characters and numbers, i.e. literals, types, booleans,
 // and keywords
 // returns 1 if a token is identified else 0 
 int lex_alnum(Lexer* lexer) {
 
-	const char* keywords[][] = {
-		{"Int", INT_T_TOK}, {"Str", STR_T_TOK}, {"Double", DOUBLE_T_TOK},
-		{"Bool" BOOL_T_TOK}, {"Arr", ARR_T_TOK}, {"TRUE", TRUE_TOK},
-		{"FALSE", FALSE_TOK}, {"func", FUNC_TOK}, {"ret", RET_TOK}, 
-		{"if", IF_TOK}, {"while", WHILE_TOK}, {"for", FOR_TOK}
-	}
-
 	if (*(lexer->src) == '"') {
+		// Read string literal into lexer state
 		lexer->curr_tok.tok_start = ++(lexer->src);
 		lexer->curr_tok.tok_type = STR_L_TOK;
 
 		while (*(lexer->src) != '"' && *(lexer->src) != 0) {
 			lexer->curr_tok.tok_len++;
-			lexer->src++; 
+			lexer->src++; lexer->pos++; 
 		}
-		// need one more src increment
-	} else if (isaplha(*(lexer->src))) {
+		
+		lexer->src++; lexer->pos++; 
+	} else if (isalpha(*(lexer->src))) {
+
+		// Read identifier or keyword into lexer state
 		lexer->curr_tok.tok_start = lexer->src;
 
-		while (isalnum(*(lexer->src))) {
+		while (isalnum(*(lexer->src)) || *(lexer->src) == '_') {
 			lexer->curr_tok.tok_len++;
-			lexer->src++;
+			lexer->src++; lexer->pos++; 
 		}
+
+		if (!is_keyword(lexer)) lexer->curr_tok.tok_type = ID_L_TOK; 
+
 	} else if (isdigit(*(lexer->src))) {
+
+		// Read double or integer into lexer state
 		lexer->curr_tok.tok_start = lexer->src;
 		int decimal_used = 0; 
 
-		while (isdigit(*(lexer->src)) || (*(lexer->src) == '.' ^ decimal_used)) {
+		while (isdigit(*(lexer->src)) && (*(lexer->src) == '.' ^ decimal_used)) {
 			if (*(lexer->src) == '.') decimal_used = 1; 
 			lexer->curr_tok.tok_len++;
-			lexer->src++; 
+			lexer->src++; lexer->pos++; 
 		}
+		
+		lexer->curr_tok.tok_type = decimal_used ? DOUBLE_L_TOK : INT_L_TOK;
+
 	} else return 0; 
-
-
 
 }
 
 // decides whether to emit ident, dedent, or end token
-void detect_whitespace(Lexer* lexer) {
+void lex_whitespace(Lexer* lexer) {
 	
 	int tab_level = 0; 
 	
@@ -161,6 +194,8 @@ void detect_whitespace(Lexer* lexer) {
 
 	if (tab_level == lexer->ident_level) lexer->curr_tok.tok_type = END_TOK;
 	else if (tab_level > lexer->ident_level) lexer->curr_tok.tok_type = INDENT_TOK;
-	else if (tab_level < lexer->ident_level) lexer->curr_tok.tok_type = DEDENT_TOK; 
+	else if (tab_level < lexer->ident_level) lexer->curr_tok.tok_type = DEDENT_TOK;
+
+	lexer->ident_level = tab_level; 	
 
 }

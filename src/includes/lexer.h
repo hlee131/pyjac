@@ -10,7 +10,7 @@ typedef enum tt {
 	TRUE_TOK, FALSE_TOK,
 
 	// keywords
-	FUNC_TOK, RET_TOK, IF_TOK, WHILE_TOK, FOR_TOK,
+	FUNC_TOK, RET_TOK, IF_TOK, WHILE_TOK, FOR_TOK, VAR_TOK, 
 
 	// terminators
 	// END_TOK is emitted for a newline of same indentation
@@ -36,7 +36,7 @@ typedef enum tt {
 
 	// misc tokens 
 	// NULL_TOK used for EOF and initial state
-	COLON_TOK, ARROW_TOK, COMMA_TOK, NULL_TOK, VERT_TOK, VERT_TOK
+	COLON_TOK, ARROW_TOK, COMMA_TOK, NULL_TOK, VERT_TOK
 } TokenType; 
 
 typedef struct t { 
@@ -60,5 +60,6 @@ typedef struct l {
 Lexer* init_lexer(char* src);
 void free_lexer(Lexer* lexer); 
 void next(Lexer* lexer); 
-void detect_whitespace(Lexer* lexer); 
+void lex_whitespace(Lexer* lexer); 
 int lex_alnum(Lexer* lexer); 
+int is_keyword(Lexer* lexer); 
