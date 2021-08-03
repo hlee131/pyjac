@@ -1,13 +1,21 @@
-#include <stdlib.h>
+#include <stdio.h> 
+#include <stdlib.h> 
 
-#include "lexer.c"
+#include "includes/lexer.h"
+#include "includes/compiler.h" 
 
 int main(int argc, char* argv[]) {
+	
+	if (argc < 2) {
+		puts("error: please supply a file name");
+		return 1; 
+	}
 
 	char* file = read_file(argv[1]); 
-	Lexer* 
+	Lexer* lex = init_lexer(file);
 
-
+	do { next(lex); } while (lex->curr_tok.tok_type != NULL_TOK);
+	return 0; 
 }
 
 char* read_file(char* file_name) {

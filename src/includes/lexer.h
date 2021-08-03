@@ -1,3 +1,5 @@
+#ifndef LEXER_H
+#define LEXER_H
 typedef enum tt {
 	// literals
 	INT_L_TOK, STR_L_TOK, DOUBLE_L_TOK, ID_L_TOK, 
@@ -63,3 +65,5 @@ void next(Lexer* lexer);
 void lex_whitespace(Lexer* lexer); 
 int lex_alnum(Lexer* lexer); 
 int is_keyword(Lexer* lexer); 
+
+#endif 

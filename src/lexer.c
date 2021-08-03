@@ -32,10 +32,10 @@ void free_lexer(Lexer* lexer) {
 void next(Lexer* lexer) {
 	
 	// check if end of source
-	if (*(lexer->src) = 0) lexer->curr_tok.tok_type = NULL_TOK; 
+	if (*(lexer->src) == 0) lexer->curr_tok.tok_type = NULL_TOK; 
 
 	// increment past any spaces
-	while (*(lexer->src) == ' ') lexer->src++; lexer->pos++;  
+	while (*(lexer->src) == ' ') { lexer->src++; lexer->pos++; }
 
 	// skip any comments
 	if (*(lexer->src) == '[') {
@@ -153,6 +153,8 @@ int lex_alnum(Lexer* lexer) {
 		}
 		
 		lexer->src++; lexer->pos++; 
+		return 1; 
+
 	} else if (isalpha(*(lexer->src))) {
 
 		// Read identifier or keyword into lexer state
@@ -164,6 +166,7 @@ int lex_alnum(Lexer* lexer) {
 		}
 
 		if (!is_keyword(lexer)) lexer->curr_tok.tok_type = ID_L_TOK; 
+		return 1; 
 
 	} else if (isdigit(*(lexer->src))) {
 
@@ -179,6 +182,7 @@ int lex_alnum(Lexer* lexer) {
 		
 		lexer->curr_tok.tok_type = decimal_used ? DOUBLE_L_TOK : INT_L_TOK;
 
+		return 1; 
 	} else return 0; 
 
 }
