@@ -3,10 +3,23 @@
 [ main function is required ]
 
 func Int: (Int: argc, Arr:Str: argv) => main:
+
+	
 	var Int: my_num = 5
 	while (my_num < 100):
 		my_num++
 
 	ret 0
+	
 
 
+func Double: (Double: x) => double:
+	ret x * 2 
+
+
+
+[ Whitespace cases
+	- two newlines
+	- one newline followed by one newline with tab
+	- one newline with tab followed by one newline
+	- two dedenting new lines

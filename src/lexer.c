@@ -44,6 +44,12 @@ void next(Lexer* lexer) {
 	if (*(lexer->src) == '[') {
 		puts("COMMENT DETECTED, SKIPPING"); 
 		while (*(lexer->src) != ']') {
+			if (*(lexer->src) == 0) {
+				printf("line %d, pos %d: expected ']' to end comment but received end of file\n",
+					lexer->line, lexer->pos); 
+				lexer->curr_tok.tok_type = NULL_TOK; return; 
+			}
+
 			lexer->src++;
 			if (*(lexer->src) == '\n') {
 				lexer->line++; 
@@ -51,7 +57,6 @@ void next(Lexer* lexer) {
 			} else lexer->pos++; 
 		}
 		lexer->src++; lexer->pos++; 
-		puts("CONTINUIING NORMALLY"); 
 	}
 
 	switch (*(lexer->src)) {
