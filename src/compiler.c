@@ -11,10 +11,15 @@ int main(int argc, char* argv[]) {
 		return 1; 
 	}
 
+	// TODO: verify file actually exists
+
 	char* file = read_file(argv[1]); 
 	Lexer* lex = init_lexer(file);
 
-	do { next(lex); } while (lex->curr_tok.tok_type != NULL_TOK);
+	do { 
+		next(lex); 
+		print_token(lex->curr_tok); 
+	} while (lex->curr_tok.tok_type != NULL_TOK);
 	return 0; 
 }
 

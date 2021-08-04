@@ -30,6 +30,9 @@ void free_lexer(Lexer* lexer) {
 }
 
 void next(Lexer* lexer) {
+
+	// reset previous token state
+	lexer->curr_tok.tok_len = 0; 
 	
 	// check if end of source
 	if (*(lexer->src) == 0) lexer->curr_tok.tok_type = NULL_TOK; 
@@ -47,11 +50,12 @@ void next(Lexer* lexer) {
 				lexer->pos = 0;
 			} else lexer->pos++; 
 		}
+		lexer->src++; lexer->pos++; 
 		puts("CONTINUIING NORMALLY"); 
 	}
 
 	switch (*(lexer->src)) {
-		case '\n': lex_whitespace(lexer); break; 
+		case '\n': lex_whitespace(lexer); lexer->line++; break; 
 		case '+':
 			if (lexer->src[1] == '+') {
 				lexer->curr_tok.tok_type = INCR_TOK; 
@@ -100,14 +104,16 @@ void next(Lexer* lexer) {
 		case '(': lexer->curr_tok.tok_type = L_PAREN_TOK; break;
 		case ')': lexer->curr_tok.tok_type = R_PAREN_TOK; break; 
 		case ':': lexer->curr_tok.tok_type = COLON_TOK; break; 
-		case '|': lexer->curr_tok.tok_type = VERT_TOK; break; 
+		case '|': lexer->curr_tok.tok_type = VERT_TOK; break;
+		case ',': lexer->curr_tok.tok_type = COMMA_TOK; break;  
 		default:
-			printf("line %d, pos %d: invalid character '%c'", 
-				lexer->line, lexer->pos, *(lexer->src));
-			lexer->pos++; lexer->line++; break; 
+			if (!lex_alnum(lexer)) {
+				printf("line %d, pos %d: invalid character '%c'", 
+					lexer->line, lexer->pos, *(lexer->src));
+			}
 	}
 	
-	lexer->src++; 
+	lexer->src++; lexer->pos++; 
 }
 
 int is_keyword(Lexer* lexer) {
@@ -126,8 +132,7 @@ int is_keyword(Lexer* lexer) {
 	for (int i = 0; i < len(keywords); i++) {
 		if (memcmp(keywords[i].keyword, 
 			lexer->curr_tok.tok_start, 
-			lexer->curr_tok.tok_len * sizeof(char))) {
-			
+			lexer->curr_tok.tok_len * sizeof(char)) == 0) {
 			lexer->curr_tok.tok_type = keywords[i].keyword_type; 
 			return 1; 
 		}
@@ -152,7 +157,6 @@ int lex_alnum(Lexer* lexer) {
 			lexer->src++; lexer->pos++; 
 		}
 		
-		lexer->src++; lexer->pos++; 
 		return 1; 
 
 	} else if (isalpha(*(lexer->src))) {
@@ -165,21 +169,24 @@ int lex_alnum(Lexer* lexer) {
 			lexer->src++; lexer->pos++; 
 		}
 
+		lexer->src--; lexer->pos--; 
+
 		if (!is_keyword(lexer)) lexer->curr_tok.tok_type = ID_L_TOK; 
 		return 1; 
 
 	} else if (isdigit(*(lexer->src))) {
-
 		// Read double or integer into lexer state
 		lexer->curr_tok.tok_start = lexer->src;
 		int decimal_used = 0; 
 
-		while (isdigit(*(lexer->src)) && (*(lexer->src) == '.' ^ decimal_used)) {
-			if (*(lexer->src) == '.') decimal_used = 1; 
+		while (isdigit((lexer->src)[1]) || ((lexer->src)[1] == '.')) {
 			lexer->curr_tok.tok_len++;
 			lexer->src++; lexer->pos++; 
+			if (*(lexer->src) == '.' && decimal_used) {
+				lexer->src--; lexer->pos--; break; 
+			} else  decimal_used = *(lexer->src) == '.'; 
 		}
-		
+
 		lexer->curr_tok.tok_type = decimal_used ? DOUBLE_L_TOK : INT_L_TOK;
 
 		return 1; 
@@ -190,6 +197,9 @@ int lex_alnum(Lexer* lexer) {
 // decides whether to emit ident, dedent, or end token
 void lex_whitespace(Lexer* lexer) {
 	
+	// TODO: don't emit end_tok if previous token was end, indent, or dedent
+	// meaning we had a blank line
+	// FIX: having empty line with no indent shouldn't emit dedent	
 	int tab_level = 0; 
 	
 	while (lexer->src[1] == '\t') {
@@ -202,4 +212,21 @@ void lex_whitespace(Lexer* lexer) {
 
 	lexer->ident_level = tab_level; 	
 
+}
+
+void print_token(Token t) {
+	char* enum_strings[] = {
+		"INT_L_TOK", "STR_L_TOK", "DOUBLE_L_TOK", "ID_L_TOK",
+		"INT_T_TOK", "STR_T_TOK", "DOUBLE_T_TOK", "BOOL_T_TOK",
+		"ARR_T_TOK", "TRUE_TOK", "FALSE_TOK", "FUNC_TOK",
+		"RET_TOK", "IF_TOK", "WHILE_TOK", "FOR_TOK", "VAR_TOK",
+		"END_TOK", "INDENT_TOK", "DEDENT_TOK", "PLUS_TOK", "MINUS_TOK",
+		"MUL_TOK", "DIV_TOK", "INCR_TOK", "DECR_TOK", "EQUALS_TOK",
+		"LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", "NOT_EQUAL_TOK",
+		"LESS_TOK", "GREAT_TOK", "ASSIGN_TOK", "L_CURL_TOK", "R_CURL_TOK",
+		"L_PAREN_TOK", "R_PAREN_TOK", "COLON_TOK", "ARROW_TOK", "COMMA_TOK",
+		"NULL_TOK", "VERT_TOK"
+	};
+
+	printf("current token type is: %s\n", enum_strings[t.tok_type]); 
 }
