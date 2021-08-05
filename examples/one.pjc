@@ -9,7 +9,7 @@ func Int: (Int: argc, Arr:Str: argv) => main:
 	while (my_num < 100):
 			my_num = 30
 			var Str: hello = "world"
-		my_num++
+			my_num++
 
 	ret 0
 	

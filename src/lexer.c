@@ -219,29 +219,33 @@ void lex_whitespace(Lexer* lexer) {
 		curr_level++; lexer->pos++; lexer->src++; 
 	}
 	
-	// similar to cpython's implementation with an indent stack 
-	if (curr_level == lex_level) { lexer->curr_tok.tok_type = END_TOK; return; }
-	else if (curr_level > lex_level) { 
+	// check if blank line 
+	if (lexer->src[1] == '\n') { lexer->pos++; lexer->src++; lex_whitespace(lexer); } 
+	else {
+		// similar to cpython's implementation with an indent stack 
+		if (curr_level == lex_level) { lexer->curr_tok.tok_type = END_TOK; return; }
+		else if (curr_level > lex_level) { 
 		
-		lexer->curr_tok.tok_type = INDENT_TOK; 
-		lexer->indent_stack[lexer->stack_index++] = curr_level; 
-		return; 
+			lexer->curr_tok.tok_type = INDENT_TOK; 
+			lexer->indent_stack[lexer->stack_index++] = curr_level; 
+			return; 
 
-	} else if (curr_level < lex_level) { 
+		} else if (curr_level < lex_level) { 
 
-		while (curr_level != lexer->indent_stack[lexer->stack_index-1]) {
-			lexer->emit_dedent_count++; lexer->stack_index--;
-			if (lexer->stack_index == 0) {
-				printf("line %d, pos %d: bad indentation level\n",
-					lexer->line, lexer->pos); 
-				break; 
-			}
+			while (curr_level != lexer->indent_stack[lexer->stack_index-1]) {
+				lexer->emit_dedent_count++; lexer->stack_index--;
+				if (lexer->stack_index == 0) {
+					printf("line %d, pos %d: bad indentation level\n",
+						lexer->line, lexer->pos); 
+					break; 
+				}
+			}	
+
+			// emit one dedent right now
+			lexer->emit_dedent_count--; 
+			lexer->curr_tok.tok_type = DEDENT_TOK;
+			return; 
 		}
-
-		// emit one dedent right now
-		lexer->emit_dedent_count--; 
-		lexer->curr_tok.tok_type = DEDENT_TOK;
-		return; 
 	}
 
 }
