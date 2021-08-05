@@ -1,0 +1,4 @@
+func Int: (Int: argc, Arr:Str: argv):
+	if (argc == 0):
+		while (argc != 5):
+			argc++ 

@@ -33,16 +33,16 @@ void free_lexer(Lexer* lexer) {
 
 void cleanup_whitespace(Lexer* lexer) {
 	lexer->emit_dedent_count = lexer->stack_index - 1;
-	printf("%d ", lexer->stack_index); 
 	lexer->stack_index = 1; 
 }
 
 void next(Lexer* lexer) {
-
+	
 	// checks if there are any dedents we need to emit
 	if (lexer->emit_dedent_count > 0) {
 		lexer->emit_dedent_count--; 
-		lexer->curr_tok.tok_type = DEDENT_TOK; 
+		lexer->curr_tok.tok_type = DEDENT_TOK;
+		return; 
 	}
 
 	// reset previous token state
