@@ -7,6 +7,8 @@ func Int: (Int: argc, Arr:Str: argv) => main:
 	
 	var Int: my_num = 5
 	while (my_num < 100):
+			my_num = 30
+			var Str: hello = "world"
 		my_num++
 
 	ret 0
@@ -23,3 +25,16 @@ func Double: (Double: x) => double:
 	- one newline followed by one newline with tab
 	- one newline with tab followed by one newline
 	- two dedenting new lines
+	TODO: don't emit indent or dedent on blank lines
+	
+	don't emit if previous is whitespace? 
+	previous can be END_TOK, DEDENT_TOK, INDENT_TOK 
+	can indent follow dedent? no
+	can indent follow end? no 
+	can indent follor indent? no 
+	indent is always after non whitespace
+
+	can dedent follow dedent? 
+	can dedent follow end?
+	can dedent follow indent?
+]

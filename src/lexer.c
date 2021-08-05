@@ -14,7 +14,9 @@ Lexer* init_lexer(char* src) {
 	l->src = src;
 	l->tok_len = 0;
 	l->pos = l->line = 1;
-	l->ident_level = 0; 
+	l->indent_stack[0] = 0; 
+	l->stack_index = 1; 
+	l->emit_dedent_count = 0; 
 
 	// init token 
 	l->curr_tok.tok_start = src;
@@ -30,6 +32,12 @@ void free_lexer(Lexer* lexer) {
 }
 
 void next(Lexer* lexer) {
+
+	// checks if there are any dedents we need to emit
+	if (lexer->emit_dedent_count > 0) {
+		lexer->emit_dedent_count--; 
+		lexer->curr_tok.tok_type = DEDENT_TOK; 
+	}
 
 	// reset previous token state
 	lexer->curr_tok.tok_len = 0; 
@@ -202,20 +210,39 @@ int lex_alnum(Lexer* lexer) {
 // decides whether to emit ident, dedent, or end token
 void lex_whitespace(Lexer* lexer) {
 	
-	// TODO: don't emit end_tok if previous token was end, indent, or dedent
-	// meaning we had a blank line
-	// FIX: having empty line with no indent shouldn't emit dedent	
-	int tab_level = 0; 
+	// TODO: skip blank line
+	// clean up whitespace when done reading file
+	int curr_level = 0; 
+	int lex_level = lexer->indent_stack[lexer->stack_index-1]; 
 	
 	while (lexer->src[1] == '\t') {
-		tab_level++; lexer->pos++; lexer->src++; 
+		curr_level++; lexer->pos++; lexer->src++; 
 	}
+	
+	// similar to cpython's implementation with an indent stack 
+	if (curr_level == lex_level) { lexer->curr_tok.tok_type = END_TOK; return; }
+	else if (curr_level > lex_level) { 
+		
+		lexer->curr_tok.tok_type = INDENT_TOK; 
+		lexer->indent_stack[lexer->stack_index++] = curr_level; 
+		return; 
 
-	if (tab_level == lexer->ident_level) lexer->curr_tok.tok_type = END_TOK;
-	else if (tab_level > lexer->ident_level) lexer->curr_tok.tok_type = INDENT_TOK;
-	else if (tab_level < lexer->ident_level) lexer->curr_tok.tok_type = DEDENT_TOK;
+	} else if (curr_level < lex_level) { 
 
-	lexer->ident_level = tab_level; 	
+		while (curr_level != lexer->indent_stack[lexer->stack_index-1]) {
+			lexer->emit_dedent_count++; lexer->stack_index--;
+			if (lexer->stack_index == 0) {
+				printf("line %d, pos %d: bad indentation level\n",
+					lexer->line, lexer->pos); 
+				break; 
+			}
+		}
+
+		// emit one dedent right now
+		lexer->emit_dedent_count--; 
+		lexer->curr_tok.tok_type = DEDENT_TOK;
+		return; 
+	}
 
 }
 

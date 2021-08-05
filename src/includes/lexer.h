@@ -1,5 +1,6 @@
 #ifndef LEXER_H
 #define LEXER_H
+#define MAX_INDENT 100 
 typedef enum tt {
 	// literals
 	INT_L_TOK, STR_L_TOK, DOUBLE_L_TOK, ID_L_TOK, 
@@ -55,7 +56,9 @@ typedef struct l {
 	int tok_len; 
 	int pos;
 	int line;
-	int ident_level; 
+	int indent_stack[MAX_INDENT]; 
+	int stack_index; 
+	int emit_dedent_count; 
 	Token curr_tok; 
 } Lexer;
 
