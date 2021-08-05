@@ -31,6 +31,12 @@ void free_lexer(Lexer* lexer) {
 	free(lexer); 
 }
 
+void cleanup_whitespace(Lexer* lexer) {
+	lexer->emit_dedent_count = lexer->stack_index - 1;
+	printf("%d ", lexer->stack_index); 
+	lexer->stack_index = 1; 
+}
+
 void next(Lexer* lexer) {
 
 	// checks if there are any dedents we need to emit
@@ -43,7 +49,16 @@ void next(Lexer* lexer) {
 	lexer->curr_tok.tok_len = 0; 
 	
 	// check if end of source
-	if (*(lexer->src) == 0) lexer->curr_tok.tok_type = NULL_TOK; 
+	if (*(lexer->src) == 0) { 
+		cleanup_whitespace(lexer); 
+		if (lexer->emit_dedent_count == 0) {
+			lexer->curr_tok.tok_type = NULL_TOK;	
+		} else {
+			lexer->emit_dedent_count--;
+			lexer->curr_tok.tok_type = DEDENT_TOK; 
+		}
+		return; 
+	}
 
 	// increment past any spaces
 	while (*(lexer->src) == ' ') { lexer->src++; lexer->pos++; }
@@ -131,6 +146,13 @@ void next(Lexer* lexer) {
 
 int is_keyword(Lexer* lexer) {
 
+	/*
+	char string[lexer->curr_tok.tok_len+1];
+	string[lexer->curr_tok.tok_len] = 0;
+	memcpy(string, lexer->curr_tok.tok_start, lexer->curr_tok.tok_len);
+	puts(string); 
+	*/
+
 	const struct pair {
 		char* keyword;
 		TokenType keyword_type;
@@ -145,7 +167,8 @@ int is_keyword(Lexer* lexer) {
 	for (int i = 0; i < len(keywords); i++) {
 		if (memcmp(keywords[i].keyword, 
 			lexer->curr_tok.tok_start, 
-			lexer->curr_tok.tok_len * sizeof(char)) == 0) {
+			lexer->curr_tok.tok_len * sizeof(char)) == 0 
+		&& strlen(keywords[i].keyword) == lexer->curr_tok.tok_len) {
 			lexer->curr_tok.tok_type = keywords[i].keyword_type; 
 			return 1; 
 		}
@@ -210,7 +233,6 @@ int lex_alnum(Lexer* lexer) {
 // decides whether to emit ident, dedent, or end token
 void lex_whitespace(Lexer* lexer) {
 	
-	// TODO: skip blank line
 	// clean up whitespace when done reading file
 	int curr_level = 0; 
 	int lex_level = lexer->indent_stack[lexer->stack_index-1]; 

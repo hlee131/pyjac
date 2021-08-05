@@ -69,5 +69,5 @@ void lex_whitespace(Lexer* lexer);
 int lex_alnum(Lexer* lexer); 
 int is_keyword(Lexer* lexer); 
 void print_token(Token t); 
-
+void cleanup_whitespace(Lexer* lexer); 
 #endif 
