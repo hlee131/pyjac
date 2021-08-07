@@ -14,10 +14,9 @@
 <block> ::= <statement> 
 |	    <ident> <statement> (<end> <statement>)* <dedent> 
 
-<statement> ::= <if_statement> | <while_loop> | <for_loop> | <var_decl> 
+<statement> ::= <if_statement> | <while_loop> | <for_loop> | <var_decl> | 'ret' <expression> 
 
-<if_statement> ::= 'if' '(' <bool_expr> ')' ':' <block> 
-
+<if_statement> ::= 'if' '(' <bool_expr> ')' ':' <block> ('elif' '(' <bool_expr> ')' ':' <block>)* ('else' ':' <block>)?  
 <while_loop> ::= 'while' '(' <bool_expr> ')' ':' <block> 
 
 <for_loop> ::= 'for' '(' <var_decl>? '|' <bool_expr>? '|' <expr>? ')' ':' <block> 
