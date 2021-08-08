@@ -1,88 +1,51 @@
 #ifndef AST_H
 #define AST_H
 
-typedef enum t {
-	// PROGRAM is the head of the tree
-	PROGRAM_NODE, 
-	
-	// constants
-	NODE_INT,
-	NODE_STR,
-	NODE_DOUBLE,
-	NODE_BOOL, 
-
-	// operations
-	ADD_NODE,
-	SUB_NODE,
-	MUL_NODE,
-	DIV_NODE,
-	EQ_NODE,
-	NEQ_NODE,
-	LT_NODE,
-	GT_NODE,
-	LE_NODE,
-	GE_NODE,
-	ASSIGN_NODE,
-	IF_NODE,
-	ELSE_NODE,
-	WHILE_NODE,
-	FOR_NODE,
-	FUNC_NODE,
-	RET_NODE
-	IF_NODE,
-	ELIF_NODE,
-	ELSE_NODE,
-	INDEX_NODE,
-	CALL_NODE,
-
-	// used for reassignment, parameters, etc. 
-	ID_NODE, 
-	
-} AST_node_type; 
-
 // ast for binary operations, i.e. +, -, ...
 struct binop_ast {
-	AST* lhs;
-	AST* rhs; 
+	enum {
+		ADD_NODE, SUB_NODE, MUL_NODE, DIV_NODE,
+		EQ_NODE, NEQ_NODE, LT_NODE, GT_NODE, LE_NODE,
+		GE_NODE, ASSIGN_NODE, INDEX_NODE 
+	} op; 
+
+	expr_ast_t* lhs;
+	expr_ast_t* rhs; 
 }
 
 // ast for if statements
+// TODO: add ast for elif and else 
 // block contains the code inside the statement
 struct if_ast {
-	AST* condition;
-	AST_linked_list* block; 
+	expr_ast_t* condition;
+	ast_list_t* block; 
 }
 
 // ast for for loops 
 struct for_ast {
-	AST* initializer;
-	AST* condition;
-	AST* updater;
-	AST_linked_list* block; 
+	state_ast_t* initializer;
+	expr_ast_t* condition;
+	state_ast_t* updater;
+	ast_list_t* block; 
 }
 
 // ast for while loops
 struct while_ast {
-	AST* condition;
-	AST_linked_list* block; 
+	expr_ast_t* condition;
+	ast_list_t* block; 
 }
 
 // ast for function declarations 
 struct func_ast {
-	type_node ret_type;
-	
-	struct { 
-		id_ast* current;
-		id_ast* next; 
-	} params; 
-
+	struct id_ast identifier; 
+	ast_list_t* params; 
 	AST_linked_list* block; 
 }
 
 // ast for identifiers 
 //
 // opposed to the ID_NODE in AST_node_type, id_ast 
-// is used during the declaration of variables 
+// is used when a type is associated with an identifer 
 struct id_ast {
 	char* name;
 	type_node id_type; 
@@ -90,11 +53,8 @@ struct id_ast {
 
 // used when a function is called
 struct call_ast {
-	AST* function;
-	struct {
-		AST* current;
-		AST* next;
-	} params; 
+	char* func_name;
+	ast_list_t* params; 
 }; 
 
 // used for return statements
@@ -102,31 +62,38 @@ struct ret_ast {
 	AST* expression; 
 }; 
 
-// main ast structure
-typedef struct a {
-	AST_node_type kind;
+typedef struct expr_ast_s {
+	enum { BINOP, CALL, INT, DOUBLE, STR, ID } kind;
 
-	// src location for error messages
-	int line;
-	int pos; 
+	int line; 
+	int pos;
 
 	union {
-		// constants info 
-		int int_value;
-		double double_val;
-		// also used to hold identifer names
-		char* str_val;
+		struct binop_ast binop; 
+		struct call_ast call; 
 
-		// subtree info 
-		struct binop_ast binop_tree;
-		struct if_ast if_tree;
-		struct for_ast for_tree;
-		struct while_ast while_tree;
-		struct func_ast func_tree; 
-		struct call_ast call_tree;
-		struct ret_ast ret_tree; 
-	} value; 
-} AST; 
+		int int_val;
+		double double_val;
+		char* str_val; 
+	} children; 
+
+} expr_ast_t; 
+
+typedef struct state_ast_s {
+	enum { IF, FOR, WHILE, FUNC, RET } kind; 
+	
+	int line;
+	int pos;
+
+	union {
+		struct if_ast if;
+		struct for_ast for;
+		struct while_ast while;
+		struct func_ast func;
+		struct ret_ast ret; 
+	} children; 
+
+} state_ast_t; 
 
 // structure for types in the ast 
 typedef struct tn {
@@ -136,9 +103,10 @@ typedef struct tn {
 	int arr_count; 
 } type_node; 
 
-// linked list to keep track of blocks of code 
-typedef struct ll {
-	AST* current;
-	AST* next; 
-} AST_linked_list; 
+// linked list for multiple expr or state asts 
+// program will be a linked list of func_ast 
+typedef struct ast_list_s {
+	void* current_ast;
+	ast_list_t* next_Ast; 
+} ast_list_t; 
 #endif
