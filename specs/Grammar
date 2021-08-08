@@ -27,7 +27,7 @@
 
 <bool_expr> ::= <expression> ( '>=' | '!=' | '<=' | '==' | '>' | '<' ) <expression> 
 
-<index_expr> ::= <expression> '{' [0-9]+ '}' 
+<index_expr> ::= <identifier> '{' [0-9]+ '}' 
 
 <call_expr> ::= <identfier> '(' <expression>* (',' <expression>)* ')' 
 
