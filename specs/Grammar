@@ -1,5 +1,5 @@
 (* Uses Extended-BNF to express pyjac's grammar *)
-(* TODO: add ternary, negation, or, and, shortcut arithmetic, 
+(* TODO: add ternary, negation, or, and, shortcut arithmetic, increment, decrement operators *)
 (* A program is a sequence of function declarations, similar to C *)
 <program> ::= <function>* 
 
@@ -32,7 +32,3 @@
 <call_expr> ::= <identfier> '(' <expression>* (',' <expression>)* ')' 
 
 <bin_expr> ::= <expression> ( '=' | '+' | '-' | '*' | '/') <expression> 
-
-<pre_expr> ::= ( '++' | '--') <expression> 
-
-<post_expr> ::= <expression> ( '++' | '--' )
