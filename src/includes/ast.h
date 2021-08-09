@@ -18,7 +18,7 @@ struct binop_ast {
 // block contains the code inside the statement
 struct if_ast {
 	expr_ast_t* condition;
-	ast_list_t* block; 
+	list_t* block; 
 }
 
 // ast for for loops 
@@ -26,20 +26,20 @@ struct for_ast {
 	state_ast_t* initializer;
 	expr_ast_t* condition;
 	state_ast_t* updater;
-	ast_list_t* block; 
+	list_t* block; 
 }
 
 // ast for while loops
 struct while_ast {
 	expr_ast_t* condition;
-	ast_list_t* block; 
+	list_t* block; 
 }
 
 // ast for function declarations 
 struct func_ast {
 	struct id_ast identifier; 
-	ast_list_t* params; 
-	AST_linked_list* block; 
+	list_t* params; 
+	list_t* block; 
 }
 
 // ast for identifiers 
@@ -54,7 +54,7 @@ struct id_ast {
 // used when a function is called
 struct call_ast {
 	char* func_name;
-	ast_list_t* params; 
+	list_t* params; 
 }; 
 
 // used for return statements
@@ -102,11 +102,4 @@ typedef struct tn {
 	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
 	int arr_count; 
 } type_node; 
-
-// linked list for multiple expr or state asts 
-// program will be a linked list of func_ast 
-typedef struct ast_list_s {
-	void* current_ast;
-	ast_list_t* next_Ast; 
-} ast_list_t; 
 #endif
