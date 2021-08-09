@@ -6,20 +6,30 @@ struct binop_ast {
 	enum {
 		ADD_NODE, SUB_NODE, MUL_NODE, DIV_NODE,
 		EQ_NODE, NEQ_NODE, LT_NODE, GT_NODE, LE_NODE,
-		GE_NODE, ASSIGN_NODE, INDEX_NODE 
+		GE_NODE, INDEX_NODE 
 	} op; 
 
 	expr_ast_t* lhs;
 	expr_ast_t* rhs; 
 }
 
+struct assign_ast {
+	id_ast* identifier; 
+	expr_ast_t* value; 
+}
+
 // ast for if statements
-// TODO: add ast for elif and else 
 // block contains the code inside the statement
 struct if_ast {
+	list_t* if_pairs; 
+}
+
+// pairs a condition to a block of code
+// represents if, elif, and else 
+struct if_pair {
 	expr_ast_t* condition;
 	list_t* block; 
-}
+}	
 
 // ast for for loops 
 struct for_ast {
@@ -38,14 +48,14 @@ struct while_ast {
 // ast for function declarations 
 struct func_ast {
 	struct id_ast identifier; 
+	// params will be list of id_ast 
 	list_t* params; 
 	list_t* block; 
 }
 
 // ast for identifiers 
 //
-// opposed to the ID_NODE in AST_node_type, id_ast 
-// is used when a type is associated with an identifer 
+// is used to represent an identifier in an ast 
 struct id_ast {
 	char* name;
 	type_node id_type; 
@@ -63,7 +73,7 @@ struct ret_ast {
 }; 
 
 typedef struct expr_ast_s {
-	enum { BINOP, CALL, INT, DOUBLE, STR, ID } kind;
+	enum { BINOP, CALL, INT, DOUBLE, STR, ID, BOOL } kind;
 
 	int line; 
 	int pos;
@@ -80,7 +90,7 @@ typedef struct expr_ast_s {
 } expr_ast_t; 
 
 typedef struct state_ast_s {
-	enum { IF, FOR, WHILE, FUNC, RET } kind; 
+	enum { IF, FOR, WHILE, FUNC, RET, ASSIGN } kind; 
 	
 	int line;
 	int pos;
@@ -91,6 +101,7 @@ typedef struct state_ast_s {
 		struct while_ast while;
 		struct func_ast func;
 		struct ret_ast ret; 
+		struct assign_ast assign; 
 	} children; 
 
 } state_ast_t; 
