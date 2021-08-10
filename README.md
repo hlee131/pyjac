@@ -9,4 +9,8 @@ The lexer tokenizes indentation in a similar way to [cpython's implementation](h
 ## Parser
 The parser is a simple LL(1) predictive parser (recursive descent with no backtracking). The parser produces an abstract syntax tree, rather than a concrete syntax tree, for type checking, optimizations, code generation, etc. 
 
- 
+
+## Future improvements
+- source location structs 
+- imports 
+- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement 

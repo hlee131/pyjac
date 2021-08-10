@@ -1,5 +1,12 @@
 #ifndef AST_H
 #define AST_H
+#include "list.h" 
+
+typedef struct expr_ast_s expr_ast_t; 
+typedef struct state_ast_s state_ast_t; 
+struct id_ast; 
+typedef struct tn type_node; 
+
 
 // ast for binary operations, i.e. +, -, ...
 struct binop_ast {
@@ -11,18 +18,18 @@ struct binop_ast {
 
 	expr_ast_t* lhs;
 	expr_ast_t* rhs; 
-}
+};
 
 struct assign_ast {
-	id_ast* identifier; 
+	struct id_ast* identifier; 
 	expr_ast_t* value; 
-}
+};
 
 // ast for if statements
 // block contains the code inside the statement
 struct if_ast {
-	list_t* if_pair_t; 
-}
+	list_t* if_pairs; 
+};
 
 // pairs a condition to a block of code
 // represents if, elif, and else 
@@ -37,21 +44,21 @@ struct for_ast {
 	expr_ast_t* condition;
 	state_ast_t* updater;
 	list_t* block; 
-}
+};
 
 // ast for while loops
 struct while_ast {
 	expr_ast_t* condition;
 	list_t* block; 
-}
+};
 
-// ast for function declarations 
-struct func_ast {
-	struct id_ast identifier; 
-	// params will be list of id_ast 
-	list_t* params; 
-	list_t* block; 
-}
+// structure for types in the ast 
+typedef struct tn {
+	enum { INT_T, STR_T, BOOL_T, DOUBLE_T } type;
+	// keeps track of arrays if any 
+	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
+	int arr_count; 
+} type_node;
 
 // ast for identifiers 
 //
@@ -59,7 +66,16 @@ struct func_ast {
 struct id_ast {
 	char* name;
 	type_node id_type; 
-}
+};
+
+// ast for function declarations 
+struct func_ast {
+	struct id_ast identifier; 
+	// params will be list of id_ast 
+	list_t* params; 
+	list_t* block; 
+};
+
 
 // used when a function is called
 struct call_ast {
@@ -69,11 +85,11 @@ struct call_ast {
 
 // used for return statements
 struct ret_ast {
-	AST* expression; 
+	expr_ast_t* expression; 
 }; 
 
 typedef struct expr_ast_s {
-	enum { BINOP, CALL, INT, DOUBLE, STR, ID, BOOL } kind;
+	enum { BINOP, CALL, INT_L, DOUBLE_L, STR_L, ID_L, BOOL_L } kind;
 
 	int line; 
 	int pos;
@@ -96,9 +112,9 @@ typedef struct state_ast_s {
 	int pos;
 
 	union {
-		struct if_ast if;
-		struct for_ast for;
-		struct while_ast while;
+		struct if_ast if_tree;
+		struct for_ast for_tree;
+		struct while_ast while_tree;
 		struct func_ast func;
 		struct ret_ast ret; 
 		struct assign_ast assign; 
@@ -106,11 +122,4 @@ typedef struct state_ast_s {
 
 } state_ast_t; 
 
-// structure for types in the ast 
-typedef struct tn {
-	enum { INT, STR, BOOL, DOUBLE } type;
-	// keeps track of arrays if any 
-	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
-	int arr_count; 
-} type_node; 
 #endif

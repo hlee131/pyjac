@@ -1,8 +1,8 @@
-#include <stdlib.h>
+#include <string.h>
 
 // substring function
 char* substring(char* start, size_t len) {
-	char* substr = malloc(sizeof(char) * (length + 1)); 
+	char* substr = malloc(sizeof(char) * (len + 1)); 
 	memcpy(substr, start, len);
 	substr[len] = 0;
 	return substr; 
