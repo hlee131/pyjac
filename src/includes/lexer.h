@@ -1,7 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 #define MAX_INDENT 100 
-typedef enum tt {
+
+typedef enum tok_type_e {
 	// literals
 	INT_L_TOK, STR_L_TOK, DOUBLE_L_TOK, ID_L_TOK, 
 
@@ -40,18 +41,18 @@ typedef enum tt {
 	// misc tokens 
 	// NULL_TOK used for EOF and initial state
 	COLON_TOK, ARROW_TOK, COMMA_TOK, NULL_TOK, VERT_TOK
-} TokenType; 
+} tok_type_t; 
 
-typedef struct t { 
-	TokenType tok_type; 
+typedef struct token_s { 
+	tok_type_t tok_type; 
 
 	// only used for literals 	
 	char* tok_start;
 	int tok_len; 
-} Token;
+} token_t;
 
 
-typedef struct l {
+typedef struct lexer_s {
 	char* src;
 	int tok_len; 
 	int pos;
@@ -59,15 +60,15 @@ typedef struct l {
 	int indent_stack[MAX_INDENT]; 
 	int stack_index; 
 	int emit_dedent_count; 
-	Token curr_tok; 
-} Lexer;
+	token_t curr_tok; 
+} lexer_t;
 
-Lexer* init_lexer(char* src);
-void free_lexer(Lexer* lexer); 
-void next(Lexer* lexer); 
-void lex_whitespace(Lexer* lexer); 
-int lex_alnum(Lexer* lexer); 
-int is_keyword(Lexer* lexer); 
-void print_token(Token t); 
-void cleanup_whitespace(Lexer* lexer); 
+lexer_t* init_lexer(char* src);
+void free_lexer(lexer_t* lexer); 
+void next(lexer_t* lexer); 
+void lex_whitespace(lexer_t* lexer); 
+int lex_alnum(lexer_t* lexer); 
+int is_keyword(lexer_t* lexer); 
+void print_token(token_t t); 
+void cleanup_whitespace(lexer_t* lexer); 
 #endif 

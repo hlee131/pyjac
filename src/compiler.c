@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	char* file = read_file(argv[1]);
 	
 	if (file) {	
-		Lexer* lex = init_lexer(file);
+		lexer_t* lex = init_lexer(file);
 		do { 
 			next(lex); 
 			print_token(lex->curr_tok); 

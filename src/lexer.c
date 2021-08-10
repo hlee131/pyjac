@@ -7,10 +7,10 @@
 
 #define len(x) (sizeof(x) / sizeof(x[0]))
 
-Lexer* init_lexer(char* src) {
+lexer_t* init_lexer(char* src) {
 	
 	// init lexer
-	Lexer* l = calloc(1, sizeof(Lexer));
+	lexer_t* l = calloc(1, sizeof(lexer_t));
 	l->src = src;
 	l->tok_len = 0;
 	l->pos = l->line = 1;
@@ -26,17 +26,17 @@ Lexer* init_lexer(char* src) {
 	return l; 
 }
 
-void free_lexer(Lexer* lexer) {
+void free_lexer(lexer_t* lexer) {
 	free(lexer->src);
 	free(lexer); 
 }
 
-void cleanup_whitespace(Lexer* lexer) {
+void cleanup_whitespace(lexer_t* lexer) {
 	lexer->emit_dedent_count = lexer->stack_index - 1;
 	lexer->stack_index = 1; 
 }
 
-void next(Lexer* lexer) {
+void next(lexer_t* lexer) {
 	
 	// checks if there are any dedents we need to emit
 	if (lexer->emit_dedent_count > 0) {
@@ -144,7 +144,7 @@ void next(Lexer* lexer) {
 	lexer->src++; lexer->pos++; 
 }
 
-int is_keyword(Lexer* lexer) {
+int is_keyword(lexer_t* lexer) {
 
 	/*
 	char string[lexer->curr_tok.tok_len+1];
@@ -155,7 +155,7 @@ int is_keyword(Lexer* lexer) {
 
 	const struct pair {
 		char* keyword;
-		TokenType keyword_type;
+		tok_type_t keyword_type;
 	} keywords[] = {
 		{"Int", INT_T_TOK}, {"Str", STR_T_TOK}, {"Double", DOUBLE_T_TOK},
 		{"Bool", BOOL_T_TOK}, {"Arr", ARR_T_TOK}, {"TRUE", TRUE_TOK},
@@ -181,7 +181,7 @@ int is_keyword(Lexer* lexer) {
 // lex tokens that contain characters and numbers, i.e. literals, types, booleans,
 // and keywords
 // returns 1 if a token is identified else 0 
-int lex_alnum(Lexer* lexer) {
+int lex_alnum(lexer_t* lexer) {
 
 	if (*(lexer->src) == '"') {
 		// Read string literal into lexer state
@@ -231,7 +231,7 @@ int lex_alnum(Lexer* lexer) {
 }
 
 // decides whether to emit ident, dedent, or end token
-void lex_whitespace(Lexer* lexer) {
+void lex_whitespace(lexer_t* lexer) {
 	
 	// clean up whitespace when done reading file
 	int curr_level = 0; 
@@ -272,7 +272,7 @@ void lex_whitespace(Lexer* lexer) {
 
 }
 
-void print_token(Token t) {
+void print_token(token_t t) {
 	char* enum_strings[] = {
 		"INT_L_TOK", "STR_L_TOK", "DOUBLE_L_TOK", "ID_L_TOK",
 		"INT_T_TOK", "STR_T_TOK", "DOUBLE_T_TOK", "BOOL_T_TOK",
