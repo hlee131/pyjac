@@ -21,15 +21,15 @@ struct assign_ast {
 // ast for if statements
 // block contains the code inside the statement
 struct if_ast {
-	list_t* if_pairs; 
+	list_t* if_pair_t; 
 }
 
 // pairs a condition to a block of code
 // represents if, elif, and else 
-struct if_pair {
+struct if_pair_s {
 	expr_ast_t* condition;
 	list_t* block; 
-}	
+} if_pair_t; 
 
 // ast for for loops 
 struct for_ast {
