@@ -14,3 +14,5 @@ The parser is a simple LL(1) predictive parser (recursive descent with no backtr
 - source location structs 
 - imports 
 - ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement 
+- garbage collection 
+- first class functions
