@@ -5,7 +5,7 @@
 typedef struct expr_ast_s expr_ast_t; 
 typedef struct state_ast_s state_ast_t; 
 struct id_ast; 
-typedef struct tn type_node; 
+typedef struct type_node_s type_node_t; 
 
 
 // ast for binary operations, i.e. +, -, ...
@@ -33,7 +33,7 @@ struct if_ast {
 
 // pairs a condition to a block of code
 // represents if, elif, and else 
-struct if_pair_s {
+typedef struct if_pair_s {
 	expr_ast_t* condition;
 	list_t* block; 
 } if_pair_t; 
@@ -53,19 +53,19 @@ struct while_ast {
 };
 
 // structure for types in the ast 
-typedef struct tn {
+typedef struct type_node_s {
 	enum { INT_T, STR_T, BOOL_T, DOUBLE_T } type;
 	// keeps track of arrays if any 
 	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
 	int arr_count; 
-} type_node;
+} type_node_t;
 
 // ast for identifiers 
 //
 // is used to represent an identifier in an ast 
 struct id_ast {
 	char* name;
-	type_node id_type; 
+	type_node_t* id_type; 
 };
 
 // ast for function declarations 

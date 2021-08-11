@@ -45,14 +45,18 @@ typedef enum tok_type_e {
 
 typedef struct token_s { 
 	tok_type_t tok_type; 
+	
+	int line;
+	int pos; 
 
 	// only used for literals 	
-	char* tok_start;
-	int tok_len; 
+	char* tok_val;
+
 } token_t;
 
 
 typedef struct lexer_s {
+	char* original_src; 
 	char* src;
 	int tok_len; 
 	int pos;
@@ -63,8 +67,15 @@ typedef struct lexer_s {
 	token_t curr_tok; 
 } lexer_t;
 
+typedef struct token_stream_s {
+	token_t* stream;
+	size_t stream_len;
+	int stream_pos; 
+} token_stream_t; 
+
 lexer_t* init_lexer(char* src);
-void free_lexer(lexer_t* lexer); 
+void free_lexer(lexer_t* lexer);
+token_stream_t* make_stream(char* src); 
 void next(lexer_t* lexer); 
 void lex_whitespace(lexer_t* lexer); 
 int lex_alnum(lexer_t* lexer); 

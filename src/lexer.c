@@ -4,6 +4,7 @@
 #include <string.h> 
 
 #include "includes/lexer.h" 
+#include "includes/utils.h" 
 
 #define len(x) (sizeof(x) / sizeof(x[0]))
 
@@ -11,23 +12,42 @@ lexer_t* init_lexer(char* src) {
 	
 	// init lexer
 	lexer_t* l = calloc(1, sizeof(lexer_t));
-	l->src = src;
+	l->src = l->original_src = src;
 	l->tok_len = 0;
 	l->pos = l->line = 1;
 	l->indent_stack[0] = 0; 
 	l->stack_index = 1; 
 	l->emit_dedent_count = 0; 
 
-	// init token 
-	l->curr_tok.tok_start = src;
-	l->curr_tok.tok_len = 0;
+	// init token
 	l->curr_tok.tok_type = NULL_TOK;
 
 	return l; 
 }
 
+token_stream_t* make_stream(char* src) {
+
+	// init stream 
+	token_stream_t* stream = malloc(sizeof(token_stream_t)); 
+	stream->stream = malloc(0);
+	stream->stream_len = 0;
+	stream->stream_pos = 0; 
+
+	lexer_t* lexer = init_lexer(src);
+
+	while (1) {
+		next(lexer); 
+		if (lexer->curr_tok.tok_type == NULL_TOK) break; 
+		stream->stream = realloc(stream->stream, ++(stream->stream_len) * sizeof(token_t)); 
+		stream->stream[stream->stream_len-1] = lexer->curr_tok; 
+	}
+
+	free_lexer(lexer);
+	return stream; 
+}
+
 void free_lexer(lexer_t* lexer) {
-	free(lexer->src);
+	free(lexer->original_src);
 	free(lexer); 
 }
 
@@ -46,7 +66,7 @@ void next(lexer_t* lexer) {
 	}
 
 	// reset previous token state
-	lexer->curr_tok.tok_len = 0; 
+	// lexer->curr_tok.tok_len = 0; 
 	
 	// check if end of source
 	if (*(lexer->src) == 0) { 
@@ -65,7 +85,6 @@ void next(lexer_t* lexer) {
 
 	// skip any comments
 	if (*(lexer->src) == '[') {
-		puts("COMMENT DETECTED, SKIPPING"); 
 		while (*(lexer->src) != ']') {
 			if (*(lexer->src) == 0) {
 				printf("line %d, pos %d: expected ']' to end comment but received end of file\n",
@@ -165,10 +184,7 @@ int is_keyword(lexer_t* lexer) {
 	};
 
 	for (int i = 0; i < len(keywords); i++) {
-		if (memcmp(keywords[i].keyword, 
-			lexer->curr_tok.tok_start, 
-			lexer->curr_tok.tok_len * sizeof(char)) == 0 
-		&& strlen(keywords[i].keyword) == lexer->curr_tok.tok_len) {
+		if (strcmp(keywords[i].keyword, lexer->curr_tok.tok_val) == 0) {
 			lexer->curr_tok.tok_type = keywords[i].keyword_type; 
 			return 1; 
 		}
@@ -185,38 +201,45 @@ int lex_alnum(lexer_t* lexer) {
 
 	if (*(lexer->src) == '"') {
 		// Read string literal into lexer state
-		lexer->curr_tok.tok_start = ++(lexer->src);
+		char* tok_start = ++(lexer->src);
+		size_t len = 0; 
 		lexer->curr_tok.tok_type = STR_L_TOK;
 
 		while (*(lexer->src) != '"' && *(lexer->src) != 0) {
-			lexer->curr_tok.tok_len++;
+			len++;
 			lexer->src++; lexer->pos++; 
 		}
+
+		lexer->curr_tok.tok_val = substring(tok_start, len); 
 		
 		return 1; 
 
 	} else if (isalpha(*(lexer->src))) {
 
 		// Read identifier or keyword into lexer state
-		lexer->curr_tok.tok_start = lexer->src;
+		char* tok_start = lexer->src;
+		size_t len = 0; 
 
 		while (isalnum(*(lexer->src)) || *(lexer->src) == '_') {
-			lexer->curr_tok.tok_len++;
+			len++;
 			lexer->src++; lexer->pos++; 
 		}
 
 		lexer->src--; lexer->pos--; 
+		lexer->curr_tok.tok_val = substring(tok_start, len); 
 
 		if (!is_keyword(lexer)) lexer->curr_tok.tok_type = ID_L_TOK; 
+
 		return 1; 
 
 	} else if (isdigit(*(lexer->src))) {
 		// Read double or integer into lexer state
-		lexer->curr_tok.tok_start = lexer->src;
+		char* tok_start = lexer->src;
+		size_t len = 0; 
 		int decimal_used = 0; 
 
 		while (isdigit((lexer->src)[1]) || ((lexer->src)[1] == '.')) {
-			lexer->curr_tok.tok_len++;
+			len++;
 			lexer->src++; lexer->pos++; 
 			if (*(lexer->src) == '.' && decimal_used) {
 				lexer->src--; lexer->pos--; break; 
@@ -224,6 +247,7 @@ int lex_alnum(lexer_t* lexer) {
 		}
 
 		lexer->curr_tok.tok_type = decimal_used ? DOUBLE_L_TOK : INT_L_TOK;
+		lexer->curr_tok.tok_val = substring(tok_start, len); 
 
 		return 1; 
 	} else return 0; 

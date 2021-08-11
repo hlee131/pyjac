@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 
 // substring function
 char* substring(char* start, size_t len) {

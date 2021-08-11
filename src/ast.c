@@ -127,6 +127,22 @@ state_ast_t* assign_ast(struct id_ast* id, expr_ast_t* val, int line, int pos) {
 	};
 	ast->line = line;
 	ast->pos = pos; 
+	return ast; 
+}
+
+// misc ast nodes and trees
+if_pair_t* if_pair(expr_ast_t* condition, list_t* block) {
+	if_pair_t* pair = malloc(sizeof(if_pair_t)); 
+	pair->condition = condition;
+	pair->block = block; 
+	return pair; 
+}
+
+type_node_t* type_node(int type, int arr_count) {
+	type_node_t* node = malloc(sizeof(type_node_t));
+	node->type = type;
+	node->arr_count = arr_count; 
+	return node; 
 }
 
 
