@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // substring function
 char* substring(char* start, size_t len) {
@@ -10,3 +11,11 @@ char* substring(char* start, size_t len) {
 }
 
 // checked malloc function 
+void* checked_malloc(size_t size) {
+	void* ptr = malloc(size); 
+	if (ptr) return ptr;
+	else {
+		printf("failed to malloc of size %zu\n", size);
+		exit(1); 
+	}
+}
