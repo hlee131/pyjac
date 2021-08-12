@@ -1,7 +1,7 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 
-#include "includes/lexer.h"
+#include "includes/parser.h"
 #include "includes/compiler.h" 
 
 int main(int argc, char* argv[]) {
@@ -14,9 +14,10 @@ int main(int argc, char* argv[]) {
 	char* file = read_file(argv[1]);
 
 	if (file) {	
-		token_stream_t* stream = make_stream(file);
-		for (int i = 0; i < stream->stream_len; i++) {
-			print_token(stream->stream[i]); 
+		parser_t* parser = init_parser(file);
+		token_stream_t* s = parser->token_stream; 
+		for (int i = 0; i < s->stream_len; i++) {
+			print_token(s->stream[i]); 
 		}
 		return 0; 
 	} else {

@@ -2,7 +2,7 @@
 
 #include "includes/ast.h"
 #include "includes/list.h"
-#include "utils.c"
+#include "includes/utils.h"
 
 // constructors for expressions 
 expr_ast_t* int_node(int val, int line, int pos) {
