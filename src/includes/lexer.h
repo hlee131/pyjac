@@ -49,7 +49,6 @@ typedef struct token_s {
 	int line;
 	int pos; 
 
-	// only used for literals 	
 	char* tok_val;
 
 } token_t;
@@ -58,7 +57,6 @@ typedef struct token_s {
 typedef struct lexer_s {
 	char* original_src; 
 	char* src;
-	int tok_len; 
 	int pos;
 	int line;
 	int indent_stack[MAX_INDENT]; 

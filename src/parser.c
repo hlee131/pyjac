@@ -19,9 +19,10 @@ parser_t* init_parser(char* src) {
 void free_parser(parser_t* p) {
 	free_stream(p->token_stream);
 	free_list(p->ast); 
-	free(parser); 
+	free(p); 
 }
 
+/* 
 void parse_program(parser_t* p) {
 	
 	token_stream_t* ts = p->token_stream; 
@@ -36,8 +37,14 @@ void parse_program(parser_t* p) {
 
 state_ast_t* parse_function(token_stream_t* ts) {
 	expect(FUNC_TOK, ts);
-	list_t* id = parse_params(ts); 
+	// what is the type? 
+	list_t* id = parse_types(ts); 
 	expect(L_PAREN_TOK, ts);
+	list_t* params = parse_params(ts); 
+	expect(R_PAREN_TOK, ts); 
+	expect(ARROW_TOK, ts); 
+	// parse id 
+	list_t* content = parse_block(ts); 
 
 }
 
@@ -77,5 +84,5 @@ int expect(tok_type_t expected, token_stream_t* ts) {
 	printf("");
 }
 
-
+*/
 

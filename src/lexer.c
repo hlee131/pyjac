@@ -13,7 +13,6 @@ lexer_t* init_lexer(char* src) {
 	// init lexer
 	lexer_t* l = calloc(1, sizeof(lexer_t));
 	l->src = l->original_src = src;
-	l->tok_len = 0;
 	l->pos = l->line = 1;
 	l->indent_stack[0] = 0; 
 	l->stack_index = 1; 
@@ -70,9 +69,6 @@ void next(lexer_t* lexer) {
 		return; 
 	}
 
-	// reset previous token state
-	// lexer->curr_tok.tok_len = 0; 
-	
 	// check if end of source
 	if (*(lexer->src) == 0) { 
 		cleanup_whitespace(lexer); 
@@ -105,19 +101,23 @@ void next(lexer_t* lexer) {
 		}
 		lexer->src++; lexer->pos++; 
 	}
-
+	
+	int len = 1; 
+	// TODO: find cleaner way
+	// TODO: give dedent/indent/end tok substrings too 
+	int found = 1;
 	switch (*(lexer->src)) {
 		case '\n': lex_whitespace(lexer); lexer->line++; break; 
 		case '+':
 			if (lexer->src[1] == '+') {
 				lexer->curr_tok.tok_type = INCR_TOK; 
-				lexer->pos++; lexer->src++;
+				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = PLUS_TOK; 
 			break; 
 		case '-':
 			if (lexer->src[1] == '-') {
 				lexer->curr_tok.tok_type = DECR_TOK; 
-				lexer->pos++; lexer->src++;
+				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = MINUS_TOK; 
 			break; 
 		case '*': lexer->curr_tok.tok_type = MUL_TOK; break; 
@@ -125,18 +125,20 @@ void next(lexer_t* lexer) {
 		case '<': 
 			if (lexer->src[1] == '=') {
 				lexer->curr_tok.tok_type = LESS_EQUAL_TOK;
-				lexer->pos++; lexer->src++; 
+				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = LESS_TOK; 
 			break; 
 		case '>':
 			if (lexer->src[1] == '=') {
 				lexer->curr_tok.tok_type = GREAT_EQUAL_TOK;
-				lexer->pos++; lexer->src++; 
+				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = GREAT_TOK; 
 			break; 
 		case '!':
-			if (lexer->src[1] == '=') lexer->curr_tok.tok_type = NOT_EQUAL_TOK;  
-			else {
+			if (lexer->src[1] == '=') {
+				lexer->curr_tok.tok_type = NOT_EQUAL_TOK;  
+				len++; 
+			} else {
 				printf("line %d, pos %d: expected '=' but received '%c'",
 					lexer->line, lexer->pos, lexer->src[1]); 
 			}
@@ -145,10 +147,10 @@ void next(lexer_t* lexer) {
 			switch (lexer->src[1]) {
 				case '>':
 					lexer->curr_tok.tok_type = ARROW_TOK;
-					lexer->pos++; lexer->src++; break; 
+					lexer->pos++; lexer->src++; len++; break; 
 				case '=':
 					lexer->curr_tok.tok_type = EQUALS_TOK;
-					lexer->pos++; lexer->src++; break; 
+					lexer->pos++; lexer->src++; len++; break; 
 				default: lexer->curr_tok.tok_type = ASSIGN_TOK; break; 
 			} break; 
 		case '{': lexer->curr_tok.tok_type = L_CURL_TOK; break; 
@@ -159,12 +161,15 @@ void next(lexer_t* lexer) {
 		case '|': lexer->curr_tok.tok_type = VERT_TOK; break;
 		case ',': lexer->curr_tok.tok_type = COMMA_TOK; break;  
 		default:
+			found = 0; 
 			if (!lex_alnum(lexer)) {
 				printf("line %d, pos %d: invalid character '%c'", 
-					lexer->line, lexer->pos, *(lexer->src));
-			}
+					lexer->line, lexer->pos++, *(lexer->src++));
+				next(lexer); 
+			} 
 	}
 	
+	lexer->curr_tok.tok_val = found ? substring(lexer->src - (len-1), len) : lexer->curr_tok.tok_val;
 	lexer->src++; lexer->pos++; 
 }
 
@@ -274,12 +279,11 @@ void lex_whitespace(lexer_t* lexer) {
 	if (lexer->src[1] == '\n') { lexer->pos++; lexer->src++; lex_whitespace(lexer); } 
 	else {
 		// similar to cpython's implementation with an indent stack 
-		if (curr_level == lex_level) { lexer->curr_tok.tok_type = END_TOK; return; }
+		if (curr_level == lex_level) { lexer->curr_tok.tok_type = END_TOK; }
 		else if (curr_level > lex_level) { 
 		
 			lexer->curr_tok.tok_type = INDENT_TOK; 
 			lexer->indent_stack[lexer->stack_index++] = curr_level; 
-			return; 
 
 		} else if (curr_level < lex_level) { 
 
@@ -295,15 +299,15 @@ void lex_whitespace(lexer_t* lexer) {
 			// emit one dedent right now
 			lexer->emit_dedent_count--; 
 			lexer->curr_tok.tok_type = DEDENT_TOK;
-			return; 
 		}
+
 	}
 
 }
 
 void print_token(token_t t) {
 	char* enum_strings[] = {
-		"INT_L_TOK", "STR_L_TOK", "DOUBLE_L_TOK", "ID_L_TOK",
+		"INT_L_TOK", "STR_L_TOK", "K", "ID_L_TOK",
 		"INT_T_TOK", "STR_T_TOK", "DOUBLE_T_TOK", "BOOL_T_TOK",
 		"ARR_T_TOK", "TRUE_TOK", "FALSE_TOK", "FUNC_TOK",
 		"RET_TOK", "IF_TOK", "WHILE_TOK", "FOR_TOK", "VAR_TOK",
@@ -316,4 +320,5 @@ void print_token(token_t t) {
 	};
 
 	printf("current token type is: %s\n", enum_strings[t.tok_type]); 
+	printf("current token value is: %s\n\n", t.tok_val); 
 }
