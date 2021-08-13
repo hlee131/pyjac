@@ -22,6 +22,8 @@
 
 <var_decl> ::= 'var ' <type_decl> <identifier> '=' <expression>
 
+<var_assign> ::= <identifier> '=' <expression> 
+
 <expression> ::= <literal> | <identifier> | <bool_expr> | <index_expr> | <call_expr> | <bin_expr> | <pre_expr> | <post_expr>
 
 <bool_expr> ::= <expression> ( '>=' | '!=' | '<=' | '==' | '>' | '<' ) <expression> 
@@ -30,4 +32,10 @@
 
 <call_expr> ::= <identfier> '(' <expression>* (',' <expression>)* ')' 
 
-<bin_expr> ::= <expression> ( '=' | '+' | '-' | '*' | '/') <expression> 
+<bin_expr> ::= <bin_expr> ('+' | '-') <term_expr> | <term_expr>
+
+<factor_expr> ::= '-' <factor_expr> | '+' <factor_expr> | <paren_expr> 
+
+<paren_expr> ::= '(' <bin_expr> ')' 
+
+<term_expr> ::= <factor_expr> ( '/' | '*' ) <term_expr>
