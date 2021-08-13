@@ -24,21 +24,16 @@ void append(list_t* list, void* value) {
 	list->length++; 
 }
 
-/*
-int main(int argc, char* argv[]) {
-	char* str1 = malloc(sizeof(char) * 5);
-	str1 = "john";
-	char* str2 = malloc(sizeof(char) * 6);
-	str2 = "world"; 
+// TODO: recursively free the tree
+void free_list(list_t* list) {
+	list_el_t* next = list->head;
 
-	list_t* l = init_list();
-	append(l, str1);
-	append(l, str2); 
+	while (next) {
+		list_el_t* curr = next; 
+		next = next->next; 
+		free(curr->current_ele);
+		free(curr); 
+	} 
 
-	list_el_t* curr_node = l->head;
-	while (curr_node != NULL) {
-		puts(curr_node->current_ele);
-		curr_node = curr_node->next; 
-	}
+	free(list); 
 }
-*/ 

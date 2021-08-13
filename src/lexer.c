@@ -51,6 +51,11 @@ void free_lexer(lexer_t* lexer) {
 	free(lexer); 
 }
 
+void free_stream(token_stream_t* stream) {
+	free(stream->stream);
+	free(stream); 
+}
+
 void cleanup_whitespace(lexer_t* lexer) {
 	lexer->emit_dedent_count = lexer->stack_index - 1;
 	lexer->stack_index = 1; 

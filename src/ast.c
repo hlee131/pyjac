@@ -59,6 +59,7 @@ expr_ast_t* binop_ast(int op, expr_ast_t* lhs, expr_ast_t* rhs, int line, int po
 	expr_ast_t* ast = malloc(sizeof(expr_ast_t)); 
 	ast->line = line;
 	ast->pos = pos;
+	ast->kind = BINOP; 
 	ast->children.binop = (struct binop_ast) {
 		.rhs = rhs, .lhs = lhs, .op = op
 	};
@@ -79,6 +80,7 @@ state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, state_ast_
 	state_ast_t* ast = malloc(sizeof(state_ast_t)); 
 	ast->line = line;
 	ast->pos = pos;
+	ast->kind = FOR; 
 	ast->children.for_tree = (struct for_ast) {
 		.initializer = initializer,
 		.condition = condition,
@@ -94,6 +96,7 @@ state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos) 
 		.condition = condition,
 		.block = block
 	};
+	ast->kind = WHILE; 
 	ast->line = line;
 	ast->pos = pos; 
 	return ast; 
@@ -106,6 +109,7 @@ state_ast_t* func_ast(struct id_ast identifier, list_t* params, list_t* block, i
 		.params = params,
 		.block = block
 	};
+	ast->kind = FUNC; 
 	ast->line = line;
 	ast->pos = pos; 
 	return ast; 
@@ -115,6 +119,7 @@ state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos) {
 	state_ast_t* ast = malloc(sizeof(state_ast_t)); 
 	ast->children.ret.expression = expr;
 	ast->line = line;
+	ast->kind = RET; 
 	ast->pos = pos;
 	return ast; 
 }
@@ -127,6 +132,7 @@ state_ast_t* assign_ast(struct id_ast* id, expr_ast_t* val, int line, int pos) {
 	};
 	ast->line = line;
 	ast->pos = pos; 
+	ast->kind = ASSIGN; 
 	return ast; 
 }
 
@@ -144,5 +150,3 @@ type_node_t* type_node(int type, int arr_count) {
 	node->arr_count = arr_count; 
 	return node; 
 }
-
-

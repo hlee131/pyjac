@@ -16,6 +16,12 @@ parser_t* init_parser(char* src) {
 	return parser; 
 }
 
+void free_parser(parser_t* p) {
+	free_stream(p->token_stream);
+	free_list(p->ast); 
+	free(parser); 
+}
+
 void parse_program(parser_t* p) {
 	
 	token_stream_t* ts = p->token_stream; 
