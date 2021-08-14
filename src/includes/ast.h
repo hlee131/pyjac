@@ -4,7 +4,7 @@
 
 typedef struct expr_ast_s expr_ast_t; 
 typedef struct state_ast_s state_ast_t; 
-struct id_ast; 
+typedef struct id_ast_s id_ast_t; 
 typedef struct type_node_s type_node_t; 
 
 
@@ -21,7 +21,7 @@ struct binop_ast {
 };
 
 struct assign_ast {
-	struct id_ast* identifier; 
+	id_ast_t* identifier; 
 	expr_ast_t* value; 
 };
 
@@ -63,14 +63,14 @@ typedef struct type_node_s {
 // ast for identifiers 
 //
 // is used to represent an identifier in an ast 
-struct id_ast {
+typedef struct id_ast_s {
 	char* name;
 	type_node_t* id_type; 
-};
+} id_ast_t;
 
 // ast for function declarations 
 struct func_ast {
-	struct id_ast identifier; 
+	id_ast_t* identifier; 
 	// params will be list of id_ast 
 	list_t* params; 
 	list_t* block; 

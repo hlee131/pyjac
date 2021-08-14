@@ -102,7 +102,7 @@ state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos) 
 	return ast; 
 }
 
-state_ast_t* func_ast(struct id_ast identifier, list_t* params, list_t* block, int line, int pos) {
+state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos) {
 	state_ast_t* ast = malloc(sizeof(state_ast_t));
 	ast->children.func = (struct func_ast) {
 		.identifier = identifier,
@@ -149,4 +149,11 @@ type_node_t* type_node(int type, int arr_count) {
 	node->type = type;
 	node->arr_count = arr_count; 
 	return node; 
+}
+
+id_ast_t* id_ast(char* name, type_node_t* id_type) {
+	id_ast_t* ast = malloc(sizeof(id_ast_t));
+	ast->name = name;
+	ast->id_type = id_type;
+	return ast; 
 }
