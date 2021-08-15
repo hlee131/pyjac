@@ -189,8 +189,8 @@ int is_keyword(lexer_t* lexer) {
 		{"Int", INT_T_TOK}, {"Str", STR_T_TOK}, {"Double", DOUBLE_T_TOK},
 		{"Bool", BOOL_T_TOK}, {"Arr", ARR_T_TOK}, {"TRUE", TRUE_TOK},
 		{"FALSE", FALSE_TOK}, {"func", FUNC_TOK}, {"ret", RET_TOK}, 
-		{"if", IF_TOK}, {"while", WHILE_TOK}, {"for", FOR_TOK},
-		{"var", VAR_TOK} 
+		{"if", IF_TOK}, {"while", WHILE_TOK}, {"for", FOR_TOK}, {"elif", ELIF_TOK},
+		{"else", ELSE_TOK}, {"var", VAR_TOK} 
 	};
 
 	for (int i = 0; i < len(keywords); i++) {
@@ -245,15 +245,16 @@ int lex_alnum(lexer_t* lexer) {
 	} else if (isdigit(*(lexer->src))) {
 		// Read double or integer into lexer state
 		char* tok_start = lexer->src;
-		size_t len = 0; 
+		size_t len = 1; 
 		int decimal_used = 0; 
 
 		while (isdigit((lexer->src)[1]) || ((lexer->src)[1] == '.')) {
 			len++;
 			lexer->src++; lexer->pos++; 
-			if (*(lexer->src) == '.' && decimal_used) {
-				lexer->src--; lexer->pos--; break; 
-			} else  decimal_used = *(lexer->src) == '.'; 
+			if (*(lexer->src) == '.') {
+				if (decimal_used) { lexer->src--; lexer->pos--; break; }
+				else decimal_used = 1;
+			} 
 		}
 
 		lexer->curr_tok.tok_type = decimal_used ? DOUBLE_L_TOK : INT_L_TOK;
@@ -307,16 +308,16 @@ void lex_whitespace(lexer_t* lexer) {
 
 void print_token(token_t t) {
 	char* enum_strings[] = {
-		"INT_L_TOK", "STR_L_TOK", "K", "ID_L_TOK",
+		"INT_L_TOK", "STR_L_TOK", "DOUBLE_L_TOK", "ID_L_TOK",
 		"INT_T_TOK", "STR_T_TOK", "DOUBLE_T_TOK", "BOOL_T_TOK",
 		"ARR_T_TOK", "TRUE_TOK", "FALSE_TOK", "FUNC_TOK",
 		"RET_TOK", "IF_TOK", "WHILE_TOK", "FOR_TOK", "VAR_TOK",
-		"END_TOK", "INDENT_TOK", "DEDENT_TOK", "PLUS_TOK", "MINUS_TOK",
-		"MUL_TOK", "DIV_TOK", "INCR_TOK", "DECR_TOK", "EQUALS_TOK",
-		"LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", "NOT_EQUAL_TOK",
-		"LESS_TOK", "GREAT_TOK", "ASSIGN_TOK", "L_CURL_TOK", "R_CURL_TOK",
-		"L_PAREN_TOK", "R_PAREN_TOK", "COLON_TOK", "ARROW_TOK", "COMMA_TOK",
-		"NULL_TOK", "VERT_TOK"
+		"ELIF_TOK", "ELSE_TOK",	"END_TOK", "INDENT_TOK", "DEDENT_TOK", 
+		"PLUS_TOK", "MINUS_TOK", "MUL_TOK", "DIV_TOK", "INCR_TOK", 
+		"DECR_TOK", "EQUALS_TOK", "LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", 
+		"NOT_EQUAL_TOK", "LESS_TOK", "GREAT_TOK", "ASSIGN_TOK", 
+		"L_CURL_TOK", "R_CURL_TOK", "L_PAREN_TOK", "R_PAREN_TOK", 
+		"COLON_TOK", "ARROW_TOK", "COMMA_TOK", "NULL_TOK", "VERT_TOK"
 	};
 
 	printf("current token type is: %s\n", enum_strings[t.tok_type]); 

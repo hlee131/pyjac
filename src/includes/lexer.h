@@ -14,7 +14,7 @@ typedef enum tok_type_e {
 	TRUE_TOK, FALSE_TOK,
 
 	// keywords
-	FUNC_TOK, RET_TOK, IF_TOK, WHILE_TOK, FOR_TOK, VAR_TOK, 
+	FUNC_TOK, RET_TOK, IF_TOK, WHILE_TOK, FOR_TOK, VAR_TOK, ELIF_TOK, ELSE_TOK,
 
 	// terminators
 	// END_TOK is emitted for a newline of same indentation
@@ -73,7 +73,8 @@ typedef struct token_stream_s {
 
 lexer_t* init_lexer(char* src);
 void free_lexer(lexer_t* lexer);
-token_stream_t* make_stream(char* src); 
+token_stream_t* make_stream(char* src);
+void free_stream(token_stream_t* ts); 
 void next(lexer_t* lexer); 
 void lex_whitespace(lexer_t* lexer); 
 int lex_alnum(lexer_t* lexer); 
