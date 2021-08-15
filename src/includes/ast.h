@@ -13,14 +13,14 @@ struct binop_ast {
 	enum {
 		ADD_NODE, SUB_NODE, MUL_NODE, DIV_NODE,
 		EQ_NODE, NEQ_NODE, LT_NODE, GT_NODE, LE_NODE,
-		GE_NODE, INDEX_NODE 
+		GE_NODE, INDEX_NODE, ASSIGN_NODE 
 	} op; 
 
 	expr_ast_t* lhs;
 	expr_ast_t* rhs; 
 };
 
-struct assign_ast {
+struct decl_ast {
 	id_ast_t* identifier; 
 	expr_ast_t* value; 
 };
@@ -117,7 +117,7 @@ typedef struct state_ast_s {
 		struct while_ast while_tree;
 		struct func_ast func;
 		struct ret_ast ret; 
-		struct assign_ast assign; 
+		struct decl_ast assign; 
 	} children; 
 
 } state_ast_t; 
@@ -134,7 +134,7 @@ state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, state_ast_
 state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos);
 state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos); 
 state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos);
-state_ast_t* assign_ast(id_ast_t* id, expr_ast_t* val, int line, int pos);
+state_ast_t* decl_ast(id_ast_t* id, expr_ast_t* val, int line, int pos);
 if_pair_t* if_pair(expr_ast_t* condition, list_t* block); 
 type_node_t* type_node(int type, int arr_count);
 id_ast_t* id_ast(char* name, type_node_t* id_type); 
