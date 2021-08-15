@@ -124,7 +124,7 @@ state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos) {
 	return ast; 
 }
 
-state_ast_t* assign_ast(struct id_ast* id, expr_ast_t* val, int line, int pos) {
+state_ast_t* assign_ast(id_ast_t* id, expr_ast_t* val, int line, int pos) {
 	state_ast_t* ast = malloc(sizeof(state_ast_t));
 	ast->children.assign = (struct assign_ast) {
 		.identifier = id,

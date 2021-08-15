@@ -21,6 +21,10 @@ func Double: (Double: x) => double:
 		if (x == 10):
 			for (var Int: i | i < x | i++):
 				x++  
+		elif (x == 5):
+			var Str: bye = "pineapple" 
+		else:
+			var Double: five = 5.452 
 
 
 

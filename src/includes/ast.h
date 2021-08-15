@@ -122,4 +122,21 @@ typedef struct state_ast_s {
 
 } state_ast_t; 
 
+expr_ast_t* int_node(int val, int line, int pos);
+expr_ast_t* str_node(char* start, size_t length, int line, int pos);
+expr_ast_t* double_node(double val, int line, int pos); 
+expr_ast_t* id_node(char* start, size_t length, int line, int pos);
+expr_ast_t* bool_node(int val, int line, int pos);
+expr_ast_t* call_ast(char* func, list_t* params, int line, int pos); 
+expr_ast_t* binop_ast(int op, expr_ast_t* lhs, expr_ast_t* rhs, int line, int pos);
+state_ast_t* if_ast(list_t* if_pairs, int line, int pos);
+state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, state_ast_t* updated, list_t* block, int line, int pos);
+state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos);
+state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos); 
+state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos);
+state_ast_t* assign_ast(id_ast_t* id, expr_ast_t* val, int line, int pos);
+if_pair_t* if_pair(expr_ast_t* condition, list_t* block); 
+type_node_t* type_node(int type, int arr_count);
+id_ast_t* id_ast(char* name, type_node_t* id_type); 
+
 #endif

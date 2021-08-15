@@ -13,6 +13,7 @@ typedef struct list_s {
 } list_t;
 
 list_t* init_list(); 
+void free_list(list_t* list); 
 void append(list_t* list, void* value); 
 #endif
 
