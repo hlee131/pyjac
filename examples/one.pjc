@@ -9,7 +9,7 @@ func Int: (Int: argc, Arr:Str: argv) => main:
 	while (my_num < 100):
 			my_num = 30
 			var Str: hello = "world"
-			my_num++
+			my_num = my_num + 1
 
 	ret 0
 	
@@ -19,8 +19,8 @@ func Double: (Double: x) => double:
 	[ emitting if tokens? ]
 	while (x >= 5):
 		if (x == 10):
-			for (var Int: i | i < x | i++):
-				x++  
+			for (var Int: i | i < x | i = i * 2):
+				x = x - 1
 		elif (x == 5):
 			var Str: bye = "pineapple" 
 		else:
@@ -33,7 +33,6 @@ func Double: (Double: x) => double:
 	- one newline followed by one newline with tab
 	- one newline with tab followed by one newline
 	- two dedenting new lines
-	TODO: don't emit indent or dedent on blank lines
 	
 	don't emit if previous is whitespace? 
 	previous can be END_TOK, DEDENT_TOK, INDENT_TOK 

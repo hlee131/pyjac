@@ -104,19 +104,18 @@ void next(lexer_t* lexer) {
 	
 	int len = 1; 
 	// TODO: find cleaner way
-	// TODO: give dedent/indent/end tok substrings too 
 	int found = 1;
 	switch (*(lexer->src)) {
 		case '\n': lex_whitespace(lexer); lexer->line++; break; 
 		case '+':
 			if (lexer->src[1] == '+') {
-				lexer->curr_tok.tok_type = INCR_TOK; 
+				// lexer->curr_tok.tok_type = INCR_TOK; 
 				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = PLUS_TOK; 
 			break; 
 		case '-':
 			if (lexer->src[1] == '-') {
-				lexer->curr_tok.tok_type = DECR_TOK; 
+				// lexer->curr_tok.tok_type = DECR_TOK; 
 				lexer->pos++; lexer->src++; len++; 
 			} else lexer->curr_tok.tok_type = MINUS_TOK; 
 			break; 

@@ -97,7 +97,6 @@ list_t* parse_params(token_stream_t* ts, int is_formal_params) {
 }
 
 // parsing statements
-
 state_ast_t* parse_function(token_stream_t* ts) {
 	
 	int line = curr(ts).line; 
@@ -135,6 +134,7 @@ state_ast_t* parse_statement(token_stream_t* ts) {
 		case WHILE_TOK: return parse_while(ts);
 		case VAR_TOK: return parse_decl(ts);
 		case RET_TOK: return parse_ret(ts);
+		case END_TOK: adv(ts); return parse_statement(ts);
 		default: return parse_expr_state(ts);
 	}
 }
@@ -228,6 +228,7 @@ state_ast_t* parse_decl(token_stream_t* ts) {
 
 // parsing expressions
 
+/*
 expr_ast_t* parse_bool(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
@@ -276,7 +277,94 @@ expr_ast_t* parse_binop(token_stream_t* ts) {
 	expr_ast_t* rhs = parse_expression(ts);
 	return binop_ast(type, lhs, rhs, line, pos);
 }
+*/ 
 
+// For information about Pratt parsing:
+// https://tdop.github.io/
+// rbp stands for right binding power
+expr_ast_t* parse_expression(token_stream_t* ts, int rbp) {
+	
+	static int bp[] = {
+		// plus, minus, mul, div
+		30, 30, 40, 40,
+		// all comparison operators
+		20, 20, 20, 20, 20, 20,
+		// assignment operator
+		10
+	}; 
+	
+	expr_ast_t* left = nud(ts);
+	while (bp[21 - curr(ts).tok_type]> rbp) {
+		left = led(left, ts);
+	}
+	return left; 
+}
+
+// Left-denotation
+expr_ast_t* led(expr_ast_t* left, token_stream_t* ts) {
+	int type; 
+	int line = curr(ts).line;
+	int pos = curr(ts).pos;
+
+	switch (curr(ts).tok_type) {
+		case PLUS_TOK: type = ADD_NODE; break;
+		case MINUS_TOK: type = SUB_NODE; break;
+		case MUL_TOK: type = MUL_NODE; break;
+		case DIV_TOK: type = DIV_NODE; break;
+		case EQUALS_TOK: type = EQ_NODE; break;
+		case LESS_EQUAL_TOK: type = LE_NODE; break;
+		case GREAT_EQUAL_TOK: type = GE_NODE; break;
+		case NOT_EQUAL_TOK: type = NEQ_NODE; break;
+		case LESS_TOK: type = LT_NODE; break;
+		case GREAT_TOK: type = GT_NODE; break;
+		case ASSIGN_TOK: type = ASSIGN_NODE; break;
+		default: break; 
+	}
+
+	adv(ts); 
+	return binop_ast(type, left, parse_expression(ts), line, pos); 
+}
+
+// Null-detonation 
+expr_ast_t* nud(token_stream_t* ts) {
+	expr_ast_t* ast; 
+	int line = curr(ts).line;
+	int pos = curr(ts).pos;
+
+	switch(curr(ts).tok_type) {
+		case INT_L_TOK: 
+			ast = int_node(atoi(curr(ts).tok_val), line, pos);
+			break; 
+		case STR_L_TOK: 
+			ast = str_node(curr(ts).tok_val, line, pos);
+			break; 
+		case DOUBLE_L_TOK:
+			ast = double_node(atof(curr(ts).tok_val), line, pos);
+			break; 
+		case ID_L_TOK:
+			// TODO: break out of both? 
+			ast = id_node(curr(ts).tok_val, line, pos);
+			switch (peek(ts).tok_type) {
+				case L_CURL_TOK:
+					adv(ts); adv(ts); 
+					ast = binop_ast(INDEX_NODE, ast, parse_expr_state(ts), line, pos);
+					break; 
+				case L_PAREN_TOK:
+					adv(ts); adv(ts);
+					char* func_name = ast->children.str_val; free(ast); 
+					ast = call_ast(func_name, parse_params(ts, 0), line, pos);
+					break; 
+				default: break; 
+			}
+		case TRUE_TOK:
+			ast = bool_node(1, line, pos); break; 
+		case FALSE_TOK:
+			ast = bool_node(0, line, pos); break;
+		case L_PAREN_TOK:
+		default: break; 
+
+	}
+}
 
 int expect(tok_type_t expected, token_stream_t* ts) {
 	if (ts->stream[ts->stream_pos].tok_type == expected) {
@@ -287,6 +375,9 @@ int expect(tok_type_t expected, token_stream_t* ts) {
 	printf("");
 }
 
-expr_ast_t* parse_expression(token_stream_t* ts) {
-	return int_node(1, 1, 1);
-}
+// panic mode (error handling and recovery)
+// void panic(token_stream_t* ts) {
+// 	tok_type_t sync_tokens = {
+
+// 	}
+// }

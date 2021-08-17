@@ -24,11 +24,11 @@
 
 <var_assign> ::= <identifier> '=' <expression> 
 
-<expression> ::= <literal> | <identifier> | <bool_expr> | <index_expr> | <call_expr> | <bin_expr> | <pre_expr> | <post_expr>
+<expression> ::= <literal> | <identifier> | <bool_expr> | <index_expr> | <call_expr> | <bin_expr>
 
 <bool_expr> ::= <expression> ( '>=' | '!=' | '<=' | '==' | '>' | '<' ) <expression> 
 
-<index_expr> ::= <identifier> '{' [0-9]+ '}' 
+<index_expr> ::= <identifier> '{' <expression> '}' 
 
 <call_expr> ::= <identfier> '(' <expression>* (',' <expression>)* ')' 
 

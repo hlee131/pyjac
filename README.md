@@ -7,12 +7,12 @@ The lexer works by switching on the character that the source pointer is on, cre
 The lexer tokenizes indentation in a similar way to [cpython's implementation](https://docs.python.org/3/reference/lexical_analysis.html#indentation). It first skips any blank lines. Afterwards, it manipulates the indentation stack depending on the current indentation level. If the current indentation level is equal to the top of the stack, a simple end line token is emitted. If the current indentation level is greater than the top of the stack, the current indentation level is pushed onto the stack and an indent token is emitted. If the current indentation level is less than the top of the stack, the code repeatedly pops the stack while emitting dedent tokens until a matching value to the current indentation level is found. At the end of the file, the code cleans up the stack by emitting a dedent token for every remaining value on the stack.
 
 ## Parser
-The parser is a simple LL(1) predictive parser (recursive descent with no backtracking) that parses the grammar found in `specs/Grammar`. The parser produces an abstract syntax tree, rather than a concrete syntax tree, for type checking, optimizations, code generation, etc. 
+The parser is a simple LL(1) predictive parser (recursive descent with no backtracking) for statements used in combination with a Pratt parser for expressions. The parser produces an abstract syntax tree, rather than a concrete syntax tree, for type checking, optimizations, code generation, etc. 
 
 
 ## Future improvements
 - source location structs 
 - imports 
-- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement 
+- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers
 - garbage collection 
 - first class functions

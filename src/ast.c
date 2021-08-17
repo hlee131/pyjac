@@ -14,12 +14,12 @@ expr_ast_t* int_node(int val, int line, int pos) {
 	return node; 
 }
 
-expr_ast_t* str_node(char* start, size_t length, int line, int pos) {
+expr_ast_t* str_node(char* value, int line, int pos) {
 	expr_ast_t* node = malloc(sizeof(expr_ast_t)); 
 	node->kind = STR_L;
 	node->line = line;
 	node->pos = pos;
-	node->children.str_val = substring(start, length); 
+	node->children.str_val = value; 
 	return node; 
 }
 
@@ -32,8 +32,8 @@ expr_ast_t* double_node(double val, int line, int pos) {
 	return node; 
 }
 
-expr_ast_t* id_node(char* start, size_t length, int line, int pos) {
-	expr_ast_t* node = str_node(start, length, line, pos); 
+expr_ast_t* id_node(char* value, int line, int pos) {
+	expr_ast_t* node = str_node(value, line, pos); 
 	node->kind = ID_L;
 	return node; 
 }

@@ -26,7 +26,6 @@ typedef enum tok_type_e {
 
 	// arithmetic operator
 	PLUS_TOK, MINUS_TOK, MUL_TOK, DIV_TOK,
-	INCR_TOK, DECR_TOK,
 
 	// compare 
 	EQUALS_TOK, LESS_EQUAL_TOK, GREAT_EQUAL_TOK, NOT_EQUAL_TOK,
