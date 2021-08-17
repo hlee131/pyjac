@@ -136,6 +136,14 @@ state_ast_t* decl_ast(id_ast_t* id, expr_ast_t* val, int line, int pos) {
 	return ast; 
 }
 
+state_ast_t* expr_ast(expr_ast_t* expr, int line, int pos) {
+	state_ast_t* ast = malloc(sizeof(state_ast_t));
+	ast->children.expr = *expr; 
+	ast->line = line;
+	ast->pos = pos;
+	return ast; 
+}
+
 // misc ast nodes and trees
 if_pair_t* if_pair(expr_ast_t* condition, list_t* block) {
 	if_pair_t* pair = malloc(sizeof(if_pair_t)); 

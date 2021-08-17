@@ -37,7 +37,6 @@ void parse_program(parser_t* p) {
 
 
 // parsing misc phrases
-
 type_node_t* parse_types(token_stream_t* ts) {
 	int arr_count = 0;
 	int type;
@@ -122,8 +121,37 @@ state_ast_t* parse_function(token_stream_t* ts) {
 list_t* parse_block(token_stream_t* ts) {
 	list_t* statements = init_list(); 
 	expect(INDENT_TOK, ts);
-	// do some parsing in here
+	while (curr(ts).tok_type != DEDENT_TOK) {
+		append(statements, parse_statement(ts));
+	}
 	expect(DEDENT_TOK, ts); 	
+	return statements; 
+}
+
+state_ast_t* parse_statement(token_stream_t* ts) {
+	switch (curr(ts).tok_type) {
+		case IF_TOK: return parse_if(ts);
+		case FOR_TOK: return parse_for(ts);
+		case WHILE_TOK: return parse_while(ts);
+		case VAR_TOK: return parse_decl(ts);
+		case RET_TOK: return parse_ret(ts);
+		default: return parse_expr_state(ts);
+	}
+}
+
+state_ast_t* parse_expr_state(token_stream_t* ts) {
+	int line = curr(ts).line;
+	int pos = curr(ts).pos;
+	expr_ast_t* expr = parse_expression(ts);
+	expect(END_TOK, ts);
+	return expr_ast(expr, line, pos);
+}
+
+state_ast_t* parse_ret(token_stream_t* ts) {
+	int line = curr(ts).line;
+	int pos = curr(ts).pos;
+	expect(RET_TOK, ts);
+	return ret_ast(parse_expression(ts), line, pos); 
 }
 
 

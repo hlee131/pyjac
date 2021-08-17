@@ -14,6 +14,8 @@ type_node_t* parse_types(token_stream_t* ts);
 list_t* parse_params(token_stream_t* ts, int is_formal_params); 
 state_ast_t* parse_function(token_stream_t* ts); 
 list_t* parse_block(token_stream_t* ts); 
+state_ast_t* parse_ret(token_stream_t* ts);
+state_ast_t* parse_expr_state(token_stream_t* ts);
 state_ast_t* parse_if(token_stream_t* ts); 
 state_ast_t* parse_while(token_stream_t* ts); 
 state_ast_t* parse_decl(token_stream_t* ts);

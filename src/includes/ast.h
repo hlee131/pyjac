@@ -106,7 +106,7 @@ typedef struct expr_ast_s {
 } expr_ast_t; 
 
 typedef struct state_ast_s {
-	enum { IF, FOR, WHILE, FUNC, RET, ASSIGN } kind; 
+	enum { IF, FOR, WHILE, FUNC, RET, ASSIGN, EXPR } kind; 
 	
 	int line;
 	int pos;
@@ -118,6 +118,7 @@ typedef struct state_ast_s {
 		struct func_ast func;
 		struct ret_ast ret; 
 		struct decl_ast assign; 
+		struct expr_ast_s expr; 
 	} children; 
 
 } state_ast_t; 
