@@ -8,7 +8,7 @@ void* checked_malloc(size_t size) {
 	if (ptr) return ptr;
 	else {
 		printf("failed to malloc of size %zu\n", size);
-		exit(1); 
+		exit(EXIT_FAILURE); 
 	}
 }
 

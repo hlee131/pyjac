@@ -4,7 +4,7 @@
 
 typedef enum tok_type_e {
 	// literals
-	INT_L_TOK, STR_L_TOK, DOUBLE_L_TOK, ID_L_TOK, 
+	INT_L_TOK = 1, STR_L_TOK, DOUBLE_L_TOK, ID_L_TOK, 
 
 	// types 
 	INT_T_TOK, STR_T_TOK, DOUBLE_T_TOK, 

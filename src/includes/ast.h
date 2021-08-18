@@ -11,7 +11,7 @@ typedef struct type_node_s type_node_t;
 // ast for binary operations, i.e. +, -, ...
 struct binop_ast {
 	enum {
-		ADD_NODE, SUB_NODE, MUL_NODE, DIV_NODE,
+		ADD_NODE = 1, SUB_NODE, MUL_NODE, DIV_NODE,
 		EQ_NODE, NEQ_NODE, LT_NODE, GT_NODE, LE_NODE,
 		GE_NODE, INDEX_NODE, ASSIGN_NODE 
 	} op; 
@@ -54,7 +54,7 @@ struct while_ast {
 
 // structure for types in the ast 
 typedef struct type_node_s {
-	enum { INT_T, STR_T, BOOL_T, DOUBLE_T } type;
+	enum { INT_T = 1, STR_T, BOOL_T, DOUBLE_T } type;
 	// keeps track of arrays if any 
 	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
 	int arr_count; 
@@ -89,7 +89,7 @@ struct ret_ast {
 }; 
 
 typedef struct expr_ast_s {
-	enum { BINOP, CALL, INT_L, DOUBLE_L, STR_L, ID_L, BOOL_L } kind;
+	enum { BINOP = 1, CALL, INT_L, DOUBLE_L, STR_L, ID_L, BOOL_L } kind;
 
 	int line; 
 	int pos;
@@ -106,7 +106,7 @@ typedef struct expr_ast_s {
 } expr_ast_t; 
 
 typedef struct state_ast_s {
-	enum { IF, FOR, WHILE, FUNC, RET, ASSIGN, EXPR } kind; 
+	enum { IF = 1, FOR, WHILE, FUNC, RET, ASSIGN, EXPR } kind; 
 	
 	int line;
 	int pos;

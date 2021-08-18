@@ -9,7 +9,6 @@ list_t* init_list() {
 	list->length = 0;
 	return list; 
 }
-#include "includes/utils.h"
 
 void append(list_t* list, void* value) {
 	list_el_t* new_node = checked_malloc(sizeof(list_el_t));

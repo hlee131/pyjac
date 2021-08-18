@@ -2,6 +2,9 @@
 
 [ main function is required ]
 
+
+	
+
 func Int: (Int: argc, Arr:Str: argv) => main:
 
 	

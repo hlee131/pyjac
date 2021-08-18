@@ -5,13 +5,19 @@
 #include "includes/lexer.h"
 #include "includes/list.h" 
 #include "includes/ast.h" 
+#include "includes/utils.h"
 
 #define peek(ts) (ts->stream[ts->stream_pos+1])
-#define adv(ts) (ts->stream_pos++) 
+// #define adv(ts) (ts->stream_pos++) 
 #define curr(ts) (ts->stream[ts->stream_pos]) 
 
+void adv(token_stream_t* ts) {
+	ts->stream_pos++; 
+	printf("stream now at: %d\n", ts->stream_pos);
+}
+
 parser_t* init_parser(char* src) {
-	parser_t* parser = checked_malloc(sizeof(parser_t));
+	parser_t* parser = (parser_t*) checked_malloc(sizeof(parser_t));
 	parser->token_stream = make_stream(src);
 	parser->ast = init_list(); 
 	return parser; 
@@ -31,6 +37,7 @@ void parse_program(parser_t* p) {
 
 	// Program can only have functions at the top level for now
 	while (ts->stream_pos < ts->stream_len) {
+		while (curr(ts).tok_type == END_TOK) adv(ts); 
 		append(p->ast, parse_function(ts)); 
 	}
 }
@@ -39,27 +46,16 @@ void parse_program(parser_t* p) {
 // parsing misc phrases
 type_node_t* parse_types(token_stream_t* ts) {
 	int arr_count = 0;
-	int type;
-	int accepting_arr = 1; 
+	int type; 
 
 	while (1) {
 		switch (curr(ts).tok_type) {
-			case INT_T_TOK:
-				accepting_arr = 0; 
-				type = INT_T; goto EXIT; 
-			case STR_T_TOK:
-				accepting_arr = 0; 
-				type = STR_T; goto EXIT; 
-			case DOUBLE_T_TOK:
-				accepting_arr = 0;
-				type = DOUBLE_T; goto EXIT; 
-			case BOOL_T_TOK:
-				accepting_arr = 0;
-				type = BOOL_T; goto EXIT; 
+			case INT_T_TOK: type = INT_T; goto EXIT; 
+			case STR_T_TOK: type = STR_T; goto EXIT; 
+			case DOUBLE_T_TOK: type = DOUBLE_T; goto EXIT; 
+			case BOOL_T_TOK: type = BOOL_T; goto EXIT; 
 			case ARR_T_TOK: 
-				if (!accepting_arr) {
-					// TODO: print formatting error message
-				} else arr_count++; 
+				arr_count++; break; 
 			default: goto EXIT;  
 		}
 		adv(ts); 
@@ -67,11 +63,12 @@ type_node_t* parse_types(token_stream_t* ts) {
 	}
 
 	EXIT:
-	if (!type) {} // TODO: print some error message  
-	else {
-		expect(COLON_TOK, ts); 
-		return type_node(type, arr_count); 
-	}
+		adv(ts);
+		if (!type) {} // TODO: print some error message  
+		else {
+			expect(COLON_TOK, ts); 
+			return type_node(type, arr_count); 
+		}
 }
 
 
@@ -79,8 +76,8 @@ list_t* parse_params(token_stream_t* ts, int is_formal_params) {
 	
 	list_t* params = init_list(); 
 
-	while (peek(ts).tok_type != R_PAREN_TOK || 
-		   peek(ts).tok_type != R_CURL_TOK) {
+	while (curr(ts).tok_type != R_PAREN_TOK && 
+		   curr(ts).tok_type != R_CURL_TOK) {
 		if (is_formal_params) {
 			type_node_t* param_type = parse_types(ts); 
 			char* param_name = curr(ts).tok_val;
@@ -90,8 +87,8 @@ list_t* parse_params(token_stream_t* ts, int is_formal_params) {
 			append(params, parse_expression(ts, 0)); 
 		}
 
-		if (peek(ts).tok_type != R_PAREN_TOK || 
-		   peek(ts).tok_type != R_CURL_TOK) expect(COMMA_TOK, ts); 
+		if (curr(ts).tok_type != R_PAREN_TOK && 
+		   curr(ts).tok_type != R_CURL_TOK) expect(COMMA_TOK, ts); 
 	}
 
 	return params; 
@@ -112,7 +109,7 @@ state_ast_t* parse_function(token_stream_t* ts) {
 	expect(ARROW_TOK, ts); 
 	
 	id_ast_t* func_type = id_ast(curr(ts).tok_val, type); 	
-	adv(ts); 
+	adv(ts); expect(COLON_TOK, ts);
 	list_t* content = parse_block(ts); 
 	
 	return func_ast(func_type, params, content, line, pos); 
@@ -245,7 +242,7 @@ const int bp[] = {
 // rbp stands for right binding power
 expr_ast_t* parse_expression(token_stream_t* ts, int rbp) {
 	expr_ast_t* left = nud(ts);
-	while (bp[21 - curr(ts).tok_type] > rbp && (
+	while (bp[22 - curr(ts).tok_type] > rbp && (
 		curr(ts).tok_type == PLUS_TOK ||
 		curr(ts).tok_type == MINUS_TOK ||
 		curr(ts).tok_type == MUL_TOK ||
@@ -336,12 +333,12 @@ expr_ast_t* nud(token_stream_t* ts) {
 }
 
 int expect(tok_type_t expected, token_stream_t* ts) {
-	if (ts->stream[ts->stream_pos].tok_type == expected) {
+	if (curr(ts).tok_type == expected) {
 		adv(ts); 
 		return 1; 
 	}
 
-	printf("");
+	printf("%d %d\n", expected, curr(ts).tok_type); 
 }
 
 // panic mode (error handling and recovery)

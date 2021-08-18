@@ -28,7 +28,7 @@ token_stream_t* make_stream(char* src) {
 
 	// init stream 
 	token_stream_t* stream = checked_malloc(sizeof(token_stream_t)); 
-	stream->stream = checked_malloc(0);
+	stream->stream = malloc(0);
 	stream->stream_len = 0;
 	stream->stream_pos = 0; 
 
@@ -312,13 +312,12 @@ void print_token(token_t t) {
 		"ARR_T_TOK", "TRUE_TOK", "FALSE_TOK", "FUNC_TOK",
 		"RET_TOK", "IF_TOK", "WHILE_TOK", "FOR_TOK", "VAR_TOK",
 		"ELIF_TOK", "ELSE_TOK",	"END_TOK", "INDENT_TOK", "DEDENT_TOK", 
-		"PLUS_TOK", "MINUS_TOK", "MUL_TOK", "DIV_TOK", "INCR_TOK", 
-		"DECR_TOK", "EQUALS_TOK", "LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", 
-		"NOT_EQUAL_TOK", "LESS_TOK", "GREAT_TOK", "ASSIGN_TOK", 
-		"L_CURL_TOK", "R_CURL_TOK", "L_PAREN_TOK", "R_PAREN_TOK", 
+		"PLUS_TOK", "MINUS_TOK", "MUL_TOK", "DIV_TOK", "EQUALS_TOK", 
+		"LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", "NOT_EQUAL_TOK", "LESS_TOK", 
+		"GREAT_TOK", "ASSIGN_TOK", "L_CURL_TOK", "R_CURL_TOK", "L_PAREN_TOK", "R_PAREN_TOK", 
 		"COLON_TOK", "ARROW_TOK", "COMMA_TOK", "NULL_TOK", "VERT_TOK"
 	};
 
-	printf("current token type is: %s\n", enum_strings[t.tok_type]); 
+	printf("current token type is: %s\n", enum_strings[t.tok_type-1]); 
 	printf("current token value is: %s\n\n", t.tok_val); 
 }
