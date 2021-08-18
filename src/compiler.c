@@ -3,6 +3,7 @@
 
 #include "includes/parser.h"
 #include "includes/compiler.h" 
+#include "includes/utils.h"
 
 int main(int argc, char* argv[]) {
 	
@@ -15,6 +16,7 @@ int main(int argc, char* argv[]) {
 
 	if (file) {	
 		parser_t* parser = init_parser(file);
+		parse_program(parser);
 		token_stream_t* s = parser->token_stream; 
 		for (int i = 0; i < s->stream_len; i++) {
 			print_token(s->stream[i]); 
@@ -33,7 +35,7 @@ char* read_file(char* file_name) {
 		fseek(source, 0L, SEEK_END);
 		long size = ftell(source);
 		fseek(source, 0L, SEEK_SET); 
-		char* file = calloc(size, sizeof(char));
+		char* file = checked_malloc(size * sizeof(char));
 		fread(file, sizeof(char), size, source);
 		fclose(source);
 		return file; 

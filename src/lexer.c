@@ -27,8 +27,8 @@ lexer_t* init_lexer(char* src) {
 token_stream_t* make_stream(char* src) {
 
 	// init stream 
-	token_stream_t* stream = malloc(sizeof(token_stream_t)); 
-	stream->stream = malloc(0);
+	token_stream_t* stream = checked_malloc(sizeof(token_stream_t)); 
+	stream->stream = checked_malloc(0);
 	stream->stream_len = 0;
 	stream->stream_pos = 0; 
 

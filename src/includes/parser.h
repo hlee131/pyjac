@@ -10,6 +10,7 @@ typedef struct parser_s {
 
 parser_t* init_parser(char* src);
 void free_parser(parser_t* p); 
+void parse_program(parser_t* p);
 type_node_t* parse_types(token_stream_t* ts);
 list_t* parse_params(token_stream_t* ts, int is_formal_params); 
 state_ast_t* parse_function(token_stream_t* ts); 

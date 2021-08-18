@@ -11,7 +11,7 @@
 #define curr(ts) (ts->stream[ts->stream_pos]) 
 
 parser_t* init_parser(char* src) {
-	parser_t* parser = malloc(sizeof(parser_t));
+	parser_t* parser = checked_malloc(sizeof(parser_t));
 	parser->token_stream = make_stream(src);
 	parser->ast = init_list(); 
 	return parser; 
@@ -79,17 +79,19 @@ list_t* parse_params(token_stream_t* ts, int is_formal_params) {
 	
 	list_t* params = init_list(); 
 
-	while (peek(ts).tok_type != R_PAREN_TOK) {
+	while (peek(ts).tok_type != R_PAREN_TOK || 
+		   peek(ts).tok_type != R_CURL_TOK) {
 		if (is_formal_params) {
 			type_node_t* param_type = parse_types(ts); 
 			char* param_name = curr(ts).tok_val;
 			append(params, id_ast(param_name, param_type)); 
 			adv(ts); 
 		} else {
-			append(params, parse_expression(ts)); 
+			append(params, parse_expression(ts, 0)); 
 		}
 
-		if (peek(ts).tok_type != R_PAREN_TOK) expect(COMMA_TOK, ts); 
+		if (peek(ts).tok_type != R_PAREN_TOK || 
+		   peek(ts).tok_type != R_CURL_TOK) expect(COMMA_TOK, ts); 
 	}
 
 	return params; 
@@ -119,6 +121,7 @@ state_ast_t* parse_function(token_stream_t* ts) {
 // valid statement is also an expression + end_tok
 list_t* parse_block(token_stream_t* ts) {
 	list_t* statements = init_list(); 
+	// TODO: we might get an END_TOK first 
 	expect(INDENT_TOK, ts);
 	while (curr(ts).tok_type != DEDENT_TOK) {
 		append(statements, parse_statement(ts));
@@ -142,7 +145,7 @@ state_ast_t* parse_statement(token_stream_t* ts) {
 state_ast_t* parse_expr_state(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
-	expr_ast_t* expr = parse_expression(ts);
+	expr_ast_t* expr = parse_expression(ts, 0);
 	expect(END_TOK, ts);
 	return expr_ast(expr, line, pos);
 }
@@ -151,7 +154,7 @@ state_ast_t* parse_ret(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
 	expect(RET_TOK, ts);
-	return ret_ast(parse_expression(ts), line, pos); 
+	return ret_ast(parse_expression(ts, 0), line, pos); 
 }
 
 
@@ -164,7 +167,7 @@ state_ast_t* parse_if(token_stream_t* ts) {
 	do {
 		expect(L_PAREN_TOK, ts);
 		// TODO: write parse_expression
-		expr_ast_t* condition = parse_expression(ts); 
+		expr_ast_t* condition = parse_expression(ts, 0); 
 		expect(R_PAREN_TOK, ts); 
 		expect(COLON_TOK, ts); 
 		list_t* block = parse_block(ts);
@@ -189,7 +192,7 @@ state_ast_t* parse_while(token_stream_t* ts) {
 	int pos = curr(ts).pos; 
 	expect(WHILE_TOK, ts); 
 	expect(L_PAREN_TOK, ts);
-	expr_ast_t* condition = parse_expression(ts); 
+	expr_ast_t* condition = parse_expression(ts, 0); 
 	expect(R_PAREN_TOK, ts); 
 	expect(COLON_TOK, ts);
 	list_t* block = parse_block(ts);
@@ -204,7 +207,7 @@ state_ast_t* parse_for(token_stream_t* ts) {
 	expect(L_PAREN_TOK, ts);
 	state_ast_t* initializer = parse_decl(ts);
 	expect(VERT_TOK, ts); 
-	expr_ast_t* condition = parse_expression(ts);
+	expr_ast_t* condition = parse_expression(ts, 0);
 	expect(VERT_TOK, ts);
 	state_ast_t* updater = parse_decl(ts);
 	expect(R_PAREN_TOK, ts);
@@ -222,79 +225,39 @@ state_ast_t* parse_decl(token_stream_t* ts) {
 	id_ast_t* id = id_ast(curr(ts).tok_val, type);
 	adv(ts);
 	expect(ASSIGN_TOK, ts);
-	expr_ast_t* expr = parse_expression(ts);
+	expr_ast_t* expr = parse_expression(ts, 0);
 	return decl_ast(id, expr, line, pos); 
 }
 
 // parsing expressions
-
-/*
-expr_ast_t* parse_bool(token_stream_t* ts) {
-	int line = curr(ts).line;
-	int pos = curr(ts).pos;
-	expr_ast_t* node = bool_node(curr(ts).tok_type == TRUE_TOK, line, pos);
-	adv(ts);
-	return node; 
-}
-
-
-expr_ast_t* parse_call(token_stream_t* ts) {
-	int line = curr(ts).line;
-	int pos = curr(ts).pos;
-	char* func_name = curr(ts).tok_val;
-	adv(ts);
-	expect(L_PAREN_TOK, ts);
-	list_t* params = parse_params(ts, 0); 
-	expect(R_PAREN_TOK, ts);
-
-	return call_ast(func_name, params, line, pos);
-}
-
-// assignment in here
-expr_ast_t* parse_binop(token_stream_t* ts) {
-	int line = curr(ts).line;
-	int pos = curr(ts).pos;
-
-	expr_ast_t* lhs = parse_expression(ts);
-	
-	int type; 
-	switch (curr(ts).tok_type) {
-		case PLUS_TOK: type = ADD_NODE; break;
-		case MINUS_TOK: type = SUB_NODE; break;
-		case MUL_TOK: type = MUL_NODE; break;
-		case DIV_TOK: type = DIV_NODE; break;
-		case EQUALS_TOK: type = EQ_NODE; break;
-		case LESS_EQUAL_TOK: type = LE_NODE; break;
-		case GREAT_EQUAL_TOK: type = GE_NODE; break;
-		case NOT_EQUAL_TOK: type = NEQ_NODE; break;
-		case LESS_TOK: type = LT_NODE; break;
-		case GREAT_TOK: type = GT_NODE; break;
-		case ID_L_TOK: type = INDEX_NODE; break;
-		case ASSIGN_TOK: type = ASSIGN_NODE; break;
-		default: break; 
-	}
-	adv(ts);
-	expr_ast_t* rhs = parse_expression(ts);
-	return binop_ast(type, lhs, rhs, line, pos);
-}
-*/ 
+// binding powers 
+const int bp[] = {
+	// plus, minus, mul, div
+	30, 30, 40, 40,
+	// all comparison operators
+	20, 20, 20, 20, 20, 20,
+	// assignment operator
+	10
+}; 
 
 // For information about Pratt parsing:
 // https://tdop.github.io/
 // rbp stands for right binding power
 expr_ast_t* parse_expression(token_stream_t* ts, int rbp) {
-	
-	static int bp[] = {
-		// plus, minus, mul, div
-		30, 30, 40, 40,
-		// all comparison operators
-		20, 20, 20, 20, 20, 20,
-		// assignment operator
-		10
-	}; 
-	
 	expr_ast_t* left = nud(ts);
-	while (bp[21 - curr(ts).tok_type]> rbp) {
+	while (bp[21 - curr(ts).tok_type] > rbp && (
+		curr(ts).tok_type == PLUS_TOK ||
+		curr(ts).tok_type == MINUS_TOK ||
+		curr(ts).tok_type == MUL_TOK ||
+		curr(ts).tok_type == DIV_TOK ||
+		curr(ts).tok_type == EQUALS_TOK ||
+		curr(ts).tok_type == LESS_EQUAL_TOK ||
+		curr(ts).tok_type == GREAT_EQUAL_TOK ||
+		curr(ts).tok_type == NOT_EQUAL_TOK ||
+		curr(ts).tok_type == LESS_TOK ||
+		curr(ts).tok_type == GREAT_TOK ||
+		curr(ts).tok_type == ASSIGN_TOK 
+	)) {
 		left = led(left, ts);
 	}
 	return left; 
@@ -305,6 +268,7 @@ expr_ast_t* led(expr_ast_t* left, token_stream_t* ts) {
 	int type; 
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
+	int binding = bp[21 - curr(ts).tok_type];
 
 	switch (curr(ts).tok_type) {
 		case PLUS_TOK: type = ADD_NODE; break;
@@ -322,7 +286,7 @@ expr_ast_t* led(expr_ast_t* left, token_stream_t* ts) {
 	}
 
 	adv(ts); 
-	return binop_ast(type, left, parse_expression(ts), line, pos); 
+	return binop_ast(type, left, parse_expression(ts, binding), line, pos); 
 }
 
 // Null-detonation 
@@ -347,12 +311,14 @@ expr_ast_t* nud(token_stream_t* ts) {
 			switch (peek(ts).tok_type) {
 				case L_CURL_TOK:
 					adv(ts); adv(ts); 
-					ast = binop_ast(INDEX_NODE, ast, parse_expr_state(ts), line, pos);
+					ast = binop_ast(INDEX_NODE, ast, parse_expression(ts, 0), line, pos);
+					expect(R_CURL_TOK, ts);
 					break; 
 				case L_PAREN_TOK:
 					adv(ts); adv(ts);
 					char* func_name = ast->children.str_val; free(ast); 
 					ast = call_ast(func_name, parse_params(ts, 0), line, pos);
+					expect(R_PAREN_TOK, ts);
 					break; 
 				default: break; 
 			}
@@ -361,9 +327,12 @@ expr_ast_t* nud(token_stream_t* ts) {
 		case FALSE_TOK:
 			ast = bool_node(0, line, pos); break;
 		case L_PAREN_TOK:
+			adv(ts);
+			ast = parse_expression(ts, 0); 
+			expect(R_PAREN_TOK, ts);
 		default: break; 
-
 	}
+	return ast; 
 }
 
 int expect(tok_type_t expected, token_stream_t* ts) {
