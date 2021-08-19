@@ -36,6 +36,7 @@ void parse_program(parser_t* p) {
 	token_stream_t* ts = p->token_stream; 
 
 	// Program can only have functions at the top level for now
+	// TODO: parser not stopping
 	while (ts->stream_pos < ts->stream_len) {
 		while (curr(ts).tok_type == END_TOK) adv(ts); 
 		append(p->ast, parse_function(ts)); 
@@ -133,12 +134,16 @@ state_ast_t* parse_statement(token_stream_t* ts) {
 		case WHILE_TOK: return parse_while(ts);
 		case VAR_TOK: {
 			state_ast_t* ast = parse_decl(ts);
-			expect(END_TOK, ts);
+			if (curr(ts).tok_type != DEDENT_TOK) expect(END_TOK, ts);
 			return ast; 
 		}
 		case RET_TOK: return parse_ret(ts);
 		case END_TOK: adv(ts); return parse_statement(ts);
-		default: return parse_expr_state(ts);
+		default: {
+			state_ast_t* ast = parse_expr_state(ts);
+			if (curr(ts).tok_type != DEDENT_TOK) expect(END_TOK, ts);
+			return ast; 
+		}
 	}
 }
 
@@ -146,8 +151,6 @@ state_ast_t* parse_expr_state(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
 	expr_ast_t* expr = parse_expression(ts, 0);
-	// TODO: can be dedent too
-	expect(END_TOK, ts);
 	return expr_ast(expr, line, pos);
 }
 
@@ -363,8 +366,13 @@ int expect(tok_type_t expected, token_stream_t* ts) {
 		adv(ts); 
 		return 1; 
 	}
-
-	printf("ERROR: %d %d\n", expected, curr(ts).tok_type); 
+	/* TODO: have panic() print out error messages,
+	 expect just does checking
+	 call panic conditionally like: 
+	     my(4) ? puts("success"):0; 
+	*/ 
+	printf("ERROR: expected %d but got %d", expected, curr(ts).tok_type); 
+	return 0;
 }
 
 // panic mode (error handling and recovery)
