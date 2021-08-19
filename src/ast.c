@@ -76,7 +76,7 @@ state_ast_t* if_ast(list_t* if_pairs, int line, int pos) {
 	return ast; 
 }
 
-state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, state_ast_t* updater, list_t* block, int line, int pos) {
+state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updater, list_t* block, int line, int pos) {
 	state_ast_t* ast = checked_malloc(sizeof(state_ast_t)); 
 	ast->line = line;
 	ast->pos = pos;

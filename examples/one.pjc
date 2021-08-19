@@ -22,7 +22,7 @@ func Double: (Double: x) => double:
 	[ emitting if tokens? ]
 	while (x >= 5):
 		if (x == 10):
-			for (var Int: i | i < x | i = i * 2):
+			for (var Int: i = 0 | i < x | i = i * 2):
 				x = x - 1
 		elif (x == 5):
 			var Str: bye = "pineapple" 

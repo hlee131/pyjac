@@ -24,6 +24,7 @@ state_ast_t* parse_for(token_stream_t* ts);
 state_ast_t* parse_decl(token_stream_t* ts);
 expr_ast_t* nud(token_stream_t* ts);
 expr_ast_t* led(expr_ast_t* left, token_stream_t* ts);
+int bp(tok_type_t tok);
 int expect(tok_type_t expected, token_stream_t* ts);
 expr_ast_t* parse_expression(token_stream_t* ts, int rbp); 
 #endif

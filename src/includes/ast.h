@@ -42,7 +42,7 @@ typedef struct if_pair_s {
 struct for_ast {
 	state_ast_t* initializer;
 	expr_ast_t* condition;
-	state_ast_t* updater;
+	expr_ast_t* updater;
 	list_t* block; 
 };
 
@@ -131,7 +131,7 @@ expr_ast_t* bool_node(int val, int line, int pos);
 expr_ast_t* call_ast(char* func, list_t* params, int line, int pos); 
 expr_ast_t* binop_ast(int op, expr_ast_t* lhs, expr_ast_t* rhs, int line, int pos);
 state_ast_t* if_ast(list_t* if_pairs, int line, int pos);
-state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, state_ast_t* updated, list_t* block, int line, int pos);
+state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updated, list_t* block, int line, int pos);
 state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos);
 state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos); 
 state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos);

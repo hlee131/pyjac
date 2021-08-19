@@ -118,7 +118,6 @@ state_ast_t* parse_function(token_stream_t* ts) {
 // valid statement is also an expression + end_tok
 list_t* parse_block(token_stream_t* ts) {
 	list_t* statements = init_list(); 
-	// TODO: we might get an END_TOK first 
 	expect(INDENT_TOK, ts);
 	while (curr(ts).tok_type != DEDENT_TOK) {
 		append(statements, parse_statement(ts));
@@ -132,7 +131,11 @@ state_ast_t* parse_statement(token_stream_t* ts) {
 		case IF_TOK: return parse_if(ts);
 		case FOR_TOK: return parse_for(ts);
 		case WHILE_TOK: return parse_while(ts);
-		case VAR_TOK: return parse_decl(ts);
+		case VAR_TOK: {
+			state_ast_t* ast = parse_decl(ts);
+			expect(END_TOK, ts);
+			return ast; 
+		}
 		case RET_TOK: return parse_ret(ts);
 		case END_TOK: adv(ts); return parse_statement(ts);
 		default: return parse_expr_state(ts);
@@ -143,6 +146,7 @@ state_ast_t* parse_expr_state(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
 	expr_ast_t* expr = parse_expression(ts, 0);
+	// TODO: can be dedent too
 	expect(END_TOK, ts);
 	return expr_ast(expr, line, pos);
 }
@@ -151,7 +155,10 @@ state_ast_t* parse_ret(token_stream_t* ts) {
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
 	expect(RET_TOK, ts);
-	return ret_ast(parse_expression(ts, 0), line, pos); 
+	state_ast_t* ast = ret_ast(parse_expression(ts, 0), line, pos); 
+	expect(END_TOK, ts); 
+
+	return ast; 
 }
 
 
@@ -161,16 +168,22 @@ state_ast_t* parse_if(token_stream_t* ts) {
 	int pos = curr(ts).pos; 
 	expect(IF_TOK, ts);
 
-	do {
+	expect(L_PAREN_TOK, ts);
+	expr_ast_t* condition = parse_expression(ts, 0); 
+	expect(R_PAREN_TOK, ts); 
+	expect(COLON_TOK, ts); 
+	list_t* block = parse_block(ts);
+	append(if_pairs, if_pair(condition, block)); 
+
+	while (curr(ts).tok_type == ELIF_TOK) {
+		expect(ELIF_TOK, ts); 
 		expect(L_PAREN_TOK, ts);
-		// TODO: write parse_expression
 		expr_ast_t* condition = parse_expression(ts, 0); 
 		expect(R_PAREN_TOK, ts); 
 		expect(COLON_TOK, ts); 
 		list_t* block = parse_block(ts);
-		append(if_pairs, if_pair(condition, block)); 
-
-	} while (curr(ts).tok_type == ELIF_TOK);
+		append(if_pairs, if_pair(condition, block));
+	}
 
 	if (curr(ts).tok_type == ELSE_TOK) {
 		expr_ast_t* condition = bool_node(1, curr(ts).line, curr(ts).pos); 
@@ -206,7 +219,7 @@ state_ast_t* parse_for(token_stream_t* ts) {
 	expect(VERT_TOK, ts); 
 	expr_ast_t* condition = parse_expression(ts, 0);
 	expect(VERT_TOK, ts);
-	state_ast_t* updater = parse_decl(ts);
+	expr_ast_t* updater = parse_expression(ts, 0);
 	expect(R_PAREN_TOK, ts);
 	expect(COLON_TOK, ts);
 	list_t* block = parse_block(ts); 
@@ -227,22 +240,34 @@ state_ast_t* parse_decl(token_stream_t* ts) {
 }
 
 // parsing expressions
-// binding powers 
-const int bp[] = {
-	// plus, minus, mul, div
-	30, 30, 40, 40,
-	// all comparison operators
-	20, 20, 20, 20, 20, 20,
-	// assignment operator
-	10
-}; 
+// returns the binding power of an operator
+int bp(tok_type_t tok) {
+	switch (tok) {
+		case PLUS_TOK:
+		case MINUS_TOK:
+			return 30;
+		case MUL_TOK:
+		case DIV_TOK:
+			return 40;
+		case EQUALS_TOK:
+		case LESS_EQUAL_TOK: 
+		case GREAT_EQUAL_TOK:
+		case NOT_EQUAL_TOK: 
+		case LESS_TOK:
+		case GREAT_TOK:
+			return 20;
+		case ASSIGN_TOK:
+			return 10;
+		default: return 0; 
+	}
+}
 
 // For information about Pratt parsing:
 // https://tdop.github.io/
 // rbp stands for right binding power
 expr_ast_t* parse_expression(token_stream_t* ts, int rbp) {
 	expr_ast_t* left = nud(ts);
-	while (bp[22 - curr(ts).tok_type] > rbp && (
+	while ((
 		curr(ts).tok_type == PLUS_TOK ||
 		curr(ts).tok_type == MINUS_TOK ||
 		curr(ts).tok_type == MUL_TOK ||
@@ -254,9 +279,9 @@ expr_ast_t* parse_expression(token_stream_t* ts, int rbp) {
 		curr(ts).tok_type == LESS_TOK ||
 		curr(ts).tok_type == GREAT_TOK ||
 		curr(ts).tok_type == ASSIGN_TOK 
-	)) {
-		left = led(left, ts);
-	}
+	) && bp(curr(ts).tok_type) > rbp ) 
+	{ left = led(left, ts); }
+	
 	return left; 
 }
 
@@ -265,7 +290,7 @@ expr_ast_t* led(expr_ast_t* left, token_stream_t* ts) {
 	int type; 
 	int line = curr(ts).line;
 	int pos = curr(ts).pos;
-	int binding = bp[21 - curr(ts).tok_type];
+	int binding = bp(curr(ts).tok_type);
 
 	switch (curr(ts).tok_type) {
 		case PLUS_TOK: type = ADD_NODE; break;
@@ -303,22 +328,22 @@ expr_ast_t* nud(token_stream_t* ts) {
 			ast = double_node(atof(curr(ts).tok_val), line, pos);
 			break; 
 		case ID_L_TOK:
-			// TODO: break out of both? 
 			ast = id_node(curr(ts).tok_val, line, pos);
 			switch (peek(ts).tok_type) {
 				case L_CURL_TOK:
 					adv(ts); adv(ts); 
 					ast = binop_ast(INDEX_NODE, ast, parse_expression(ts, 0), line, pos);
 					expect(R_CURL_TOK, ts);
-					break; 
+					return ast; 
 				case L_PAREN_TOK:
 					adv(ts); adv(ts);
 					char* func_name = ast->children.str_val; free(ast); 
 					ast = call_ast(func_name, parse_params(ts, 0), line, pos);
 					expect(R_PAREN_TOK, ts);
-					break; 
+					return ast; 
 				default: break; 
 			}
+			break; 
 		case TRUE_TOK:
 			ast = bool_node(1, line, pos); break; 
 		case FALSE_TOK:
@@ -329,6 +354,7 @@ expr_ast_t* nud(token_stream_t* ts) {
 			expect(R_PAREN_TOK, ts);
 		default: break; 
 	}
+	adv(ts); 
 	return ast; 
 }
 
@@ -338,7 +364,7 @@ int expect(tok_type_t expected, token_stream_t* ts) {
 		return 1; 
 	}
 
-	printf("%d %d\n", expected, curr(ts).tok_type); 
+	printf("ERROR: %d %d\n", expected, curr(ts).tok_type); 
 }
 
 // panic mode (error handling and recovery)

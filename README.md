@@ -11,8 +11,10 @@ The parser is a simple LL(1) predictive parser (recursive descent with no backtr
 
 
 ## Future improvements
+### Priority 
+- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers, skip keyword
+### Nice to have
 - source location structs 
 - imports 
-- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers
 - garbage collection 
 - first class functions
