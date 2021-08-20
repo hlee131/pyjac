@@ -8,13 +8,8 @@
 #include "includes/utils.h"
 
 #define peek(ts) (ts->stream[ts->stream_pos+1])
-// #define adv(ts) (ts->stream_pos++) 
+#define adv(ts) (ts->stream_pos++) 
 #define curr(ts) (ts->stream[ts->stream_pos]) 
-
-void adv(token_stream_t* ts) {
-	ts->stream_pos++; 
-	printf("stream now at: %d\n", ts->stream_pos);
-}
 
 parser_t* init_parser(char* src) {
 	parser_t* parser = (parser_t*) checked_malloc(sizeof(parser_t));
@@ -36,11 +31,11 @@ void parse_program(parser_t* p) {
 	token_stream_t* ts = p->token_stream; 
 
 	// Program can only have functions at the top level for now
-	// TODO: parser not stopping
-	while (ts->stream_pos < ts->stream_len) {
-		while (curr(ts).tok_type == END_TOK) adv(ts); 
-		append(p->ast, parse_function(ts)); 
-	}
+	// TODO: find better way of dealing with END_TOKs
+	while (curr(ts).tok_type == END_TOK) adv(ts);
+	while (curr(ts).tok_type == FUNC_TOK) append(p->ast, parse_function(ts));
+
+	printf("parser: finished parsing with %zu functions\n", p->ast->length);
 }
 
 
@@ -137,7 +132,11 @@ state_ast_t* parse_statement(token_stream_t* ts) {
 			if (curr(ts).tok_type != DEDENT_TOK) expect(END_TOK, ts);
 			return ast; 
 		}
-		case RET_TOK: return parse_ret(ts);
+		case RET_TOK: {
+			state_ast_t* ast = parse_ret(ts);
+			if (curr(ts).tok_type != DEDENT_TOK) expect(END_TOK, ts);
+			return ast; 
+		}
 		case END_TOK: adv(ts); return parse_statement(ts);
 		default: {
 			state_ast_t* ast = parse_expr_state(ts);
@@ -159,8 +158,6 @@ state_ast_t* parse_ret(token_stream_t* ts) {
 	int pos = curr(ts).pos;
 	expect(RET_TOK, ts);
 	state_ast_t* ast = ret_ast(parse_expression(ts, 0), line, pos); 
-	expect(END_TOK, ts); 
-
 	return ast; 
 }
 
