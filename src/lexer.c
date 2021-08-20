@@ -103,8 +103,6 @@ void next(lexer_t* lexer) {
 	}
 	
 	int len = 1; 
-	// TODO: find cleaner way
-	int found = 1;
 	switch (*(lexer->src)) {
 		case '\n': lex_whitespace(lexer); lexer->line++; break; 
 		case '+':
@@ -159,27 +157,20 @@ void next(lexer_t* lexer) {
 		case ':': lexer->curr_tok.tok_type = COLON_TOK; break; 
 		case '|': lexer->curr_tok.tok_type = VERT_TOK; break;
 		case ',': lexer->curr_tok.tok_type = COMMA_TOK; break;  
-		default:
-			found = 0; 
+		default: 
 			if (!lex_alnum(lexer)) {
 				printf("line %d, pos %d: invalid character '%c'", 
 					lexer->line, lexer->pos++, *(lexer->src++));
 				next(lexer); 
-			} 
+			} else { lexer->pos++; lexer->src++; }
+			return; 
 	}
 	
-	lexer->curr_tok.tok_val = found ? substring(lexer->src - (len-1), len) : lexer->curr_tok.tok_val;
+	lexer->curr_tok.tok_val = substring(lexer->src - (len-1), len);
 	lexer->src++; lexer->pos++; 
 }
 
 int is_keyword(lexer_t* lexer) {
-
-	/*
-	char string[lexer->curr_tok.tok_len+1];
-	string[lexer->curr_tok.tok_len] = 0;
-	memcpy(string, lexer->curr_tok.tok_start, lexer->curr_tok.tok_len);
-	puts(string); 
-	*/
 
 	const struct pair {
 		char* keyword;
@@ -234,7 +225,9 @@ int lex_alnum(lexer_t* lexer) {
 			lexer->src++; lexer->pos++; 
 		}
 
+		// we choose to consume the character inside next()
 		lexer->src--; lexer->pos--; 
+
 		lexer->curr_tok.tok_val = substring(tok_start, len); 
 
 		if (!is_keyword(lexer)) lexer->curr_tok.tok_type = ID_L_TOK; 
