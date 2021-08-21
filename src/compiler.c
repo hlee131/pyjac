@@ -16,11 +16,11 @@ int main(int argc, char* argv[]) {
 
 	if (file) {	
 		parser_t* parser = init_parser(file);
-		token_stream_t* s = parser->token_stream; 
-		for (int i = 0; i < s->stream_len; i++) {
-			print_token(s->stream[i]); 
-		}
-		parse_program(parser);
+		// token_stream_t* s = parser->token_stream; 
+		// for (int i = 0; i < s->stream_len; i++) {
+		// 	print_token(s->stream[i]); 
+		// }
+		// parse_program(parser);
 		return 0; 
 	} else {
 		puts("error: invalid file name");

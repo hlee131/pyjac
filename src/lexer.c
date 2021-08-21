@@ -88,7 +88,7 @@ void next(lexer_t* lexer) {
 	if (*(lexer->src) == '[') {
 		while (*(lexer->src) != ']') {
 			if (*(lexer->src) == 0) {
-				printf("line %d, pos %d: expected ']' to end comment but received end of file\n",
+				printf("LEX ERROR: line %d, pos %d: expected ']' to end comment but received end of file\n",
 					lexer->line, lexer->pos); 
 				lexer->curr_tok.tok_type = NULL_TOK; return; 
 			}
@@ -104,7 +104,7 @@ void next(lexer_t* lexer) {
 	
 	int len = 1; 
 	switch (*(lexer->src)) {
-		case '\n': lex_whitespace(lexer); lexer->line++; break; 
+		case '\n': lex_whitespace(lexer); break; 
 		case '+':
 			if (lexer->src[1] == '+') {
 				// lexer->curr_tok.tok_type = INCR_TOK; 
@@ -136,7 +136,7 @@ void next(lexer_t* lexer) {
 				lexer->curr_tok.tok_type = NOT_EQUAL_TOK;  
 				len++; 
 			} else {
-				printf("line %d, pos %d: expected '=' but received '%c'",
+				printf("LEX ERROR: line %d, pos %d: expected '=' but received '%c'",
 					lexer->line, lexer->pos, lexer->src[1]); 
 			}
 			lexer->pos++; lexer->src++; break; 
@@ -159,7 +159,8 @@ void next(lexer_t* lexer) {
 		case ',': lexer->curr_tok.tok_type = COMMA_TOK; break;  
 		default: 
 			if (!lex_alnum(lexer)) {
-				printf("line %d, pos %d: invalid character '%c'", 
+				// TODO: what if unknown char in an identifer? 
+				printf("LEX ERROR: line %d, pos %d: invalid character '%c'\n", 
 					lexer->line, lexer->pos++, *(lexer->src++));
 				next(lexer); 
 			} else { lexer->pos++; lexer->src++; }
@@ -260,6 +261,9 @@ int lex_alnum(lexer_t* lexer) {
 // decides whether to emit ident, dedent, or end token
 void lex_whitespace(lexer_t* lexer) {
 	
+	lexer->line++; 
+	lexer->pos = 0; 
+
 	// clean up whitespace when done reading file
 	int curr_level = 0; 
 	int lex_level = lexer->indent_stack[lexer->stack_index-1]; 
@@ -283,7 +287,7 @@ void lex_whitespace(lexer_t* lexer) {
 			while (curr_level != lexer->indent_stack[lexer->stack_index-1]) {
 				lexer->emit_dedent_count++; lexer->stack_index--;
 				if (lexer->stack_index == 0) {
-					printf("line %d, pos %d: bad indentation level\n",
+					printf("LEX ERROR: line %d, pos %d: bad indentation level\n",
 						lexer->line, lexer->pos); 
 					break; 
 				}
