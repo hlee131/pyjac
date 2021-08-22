@@ -15,5 +15,6 @@ typedef struct list_s {
 list_t* init_list(); 
 void free_list(list_t* list); 
 void append(list_t* list, void* value); 
+void append_head(list_t* list, void* value);
 #endif
 

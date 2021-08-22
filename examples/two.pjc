@@ -1,3 +1,4 @@
+[ Function headers? ]
 func Int: (Int: argc, Arr:Str: argv) => main:
 	if (argc == 0):
 		while (argc != 5):

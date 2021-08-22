@@ -25,6 +25,17 @@ void append(list_t* list, void* value) {
 	list->length++; 
 }
 
+void append_head(list_t* list, void* value) {
+	list_el_t* new_node = checked_malloc(sizeof(list_el_t));
+	new_node->current_ele = value;
+	new_node->next = list->head; 
+
+	if (list->length == 0) list->head = list->tail = new_node; 
+	else list->head = new_node;
+
+	list->length++; 
+}
+
 // TODO: recursively free the tree
 void free_list(list_t* list) {
 	list_el_t* next = list->head;
