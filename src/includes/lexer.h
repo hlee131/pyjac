@@ -78,6 +78,6 @@ void next(lexer_t* lexer);
 void lex_whitespace(lexer_t* lexer); 
 int lex_alnum(lexer_t* lexer); 
 int is_keyword(lexer_t* lexer); 
-void print_token(token_t t); 
+char* tok_string(tok_type_t t);
 void cleanup_whitespace(lexer_t* lexer); 
 #endif 

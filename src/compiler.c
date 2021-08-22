@@ -18,9 +18,10 @@ int main(int argc, char* argv[]) {
 		parser_t* parser = init_parser(file);
 		// token_stream_t* s = parser->token_stream; 
 		// for (int i = 0; i < s->stream_len; i++) {
-		// 	print_token(s->stream[i]); 
+		// 	puts(tok_string(s->stream[i].tok_type)); 
 		// }
-		// parse_program(parser);
+		// printf("%d\n", parser->token_stream->stream_len);
+		parse_program(parser);
 		return 0; 
 	} else {
 		puts("error: invalid file name");

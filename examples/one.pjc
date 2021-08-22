@@ -3,25 +3,25 @@
 [ main function is required ]
 
 
-	~
+
 
 func Int: (Int: argc, Arr:Str: argv) => main:
 
 	
 	var Int: my_num = 5
-	while `(my_num < 100):
+	while (my_num < 100):
 			my_num = 30
 			var Str: hello = "world"
 			my_num = my_num + 1
 
 	ret 0
 	
+`
 
-
-func Double: @(Double: x) => double:
+func Double: (Double: x) => double:
 	[ emitting if tokens? ]
 	while (x >= 5):
-		if (x == 10):
+		if ((x == 10):
 			for (var Int: i = 0 | i < x | i = i * 2):
 				x = x - 1
 		elif (x == 5):

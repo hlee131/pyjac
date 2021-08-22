@@ -38,6 +38,8 @@ token_stream_t* make_stream(char* src) {
 		next(lexer); 
 		if (lexer->curr_tok.tok_type == NULL_TOK) break; 
 		stream->stream = realloc(stream->stream, ++(stream->stream_len) * sizeof(token_t)); 
+		lexer->curr_tok.line = lexer->line;
+		lexer->curr_tok.pos = lexer->pos; 
 		stream->stream[stream->stream_len-1] = lexer->curr_tok; 
 	}
 
@@ -302,19 +304,20 @@ void lex_whitespace(lexer_t* lexer) {
 
 }
 
-void print_token(token_t t) {
+char* tok_string(tok_type_t t) {
 	char* enum_strings[] = {
-		"INT_L_TOK", "STR_L_TOK", "DOUBLE_L_TOK", "ID_L_TOK",
-		"INT_T_TOK", "STR_T_TOK", "DOUBLE_T_TOK", "BOOL_T_TOK",
-		"ARR_T_TOK", "TRUE_TOK", "FALSE_TOK", "FUNC_TOK",
-		"RET_TOK", "IF_TOK", "WHILE_TOK", "FOR_TOK", "VAR_TOK",
-		"ELIF_TOK", "ELSE_TOK",	"END_TOK", "INDENT_TOK", "DEDENT_TOK", 
-		"PLUS_TOK", "MINUS_TOK", "MUL_TOK", "DIV_TOK", "EQUALS_TOK", 
-		"LESS_EQUAL_TOK", "GREAT_EQUAL_TOK", "NOT_EQUAL_TOK", "LESS_TOK", 
-		"GREAT_TOK", "ASSIGN_TOK", "L_CURL_TOK", "R_CURL_TOK", "L_PAREN_TOK", "R_PAREN_TOK", 
-		"COLON_TOK", "ARROW_TOK", "COMMA_TOK", "NULL_TOK", "VERT_TOK"
+		"integer literal", "string literal", "double literal", "identifier",
+		"'Int'", "'Str'", "'Double'", "'Bool'",
+		"'Arr'", "'TRUE'", "'FALSE'", "'func'",
+		"'ret'", "'if'", "'while'", "'for'", "'var'",
+		"'elif'", "'else'",	"new line with same indentation", "increased indentation", "decreased indentation", 
+		"'+'", "'-'", "'*'", "'/'", "'=='", 
+		"'<='", "'>='", "'!='", "'<'", 
+		"'>'", "'='", "'{'", "'}", "'('", "')'", 
+		"':'", "'=>'", "','", "NULL_TOK", "'|'"
 	};
 
-	printf("current token type is: %s\n", enum_strings[t.tok_type-1]); 
-	printf("current token value is: %s\n\n", t.tok_val); 
+	char* string = checked_malloc((strlen(enum_strings[t-1]) + 1) * sizeof(char));
+	strcpy(string, enum_strings[t-1]);
+	return string; 
 }

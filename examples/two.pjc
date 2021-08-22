@@ -1,4 +1,4 @@
-func Int: (Int: argc, Arr:Str: argv):
+func Int: (Int: argc, Arr:Str: argv) => main:
 	if (argc == 0):
 		while (argc != 5):
-			argc++ 
+			argc = argc + 1

@@ -10,6 +10,8 @@
 #define peek(ts) (ts->stream[ts->stream_pos+1])
 #define adv(ts) (ts->stream_pos++) 
 #define curr(ts) (ts->stream[ts->stream_pos]) 
+#define True 1 
+#define False 0 
 
 parser_t* init_parser(char* src) {
 	parser_t* parser = (parser_t*) checked_malloc(sizeof(parser_t));
@@ -33,7 +35,10 @@ void parse_program(parser_t* p) {
 	// Program can only have functions at the top level for now
 	// TODO: find better way of dealing with END_TOKs
 	while (curr(ts).tok_type == END_TOK) adv(ts);
-	while (curr(ts).tok_type == FUNC_TOK) append(p->ast, parse_function(ts));
+	while (curr(ts).tok_type == FUNC_TOK || curr(ts).tok_type == END_TOK) {
+		if (curr(ts).tok_type == FUNC_TOK) append(p->ast, parse_function(ts));
+		else adv(ts);
+	}
 
 	printf("parser: finished parsing with %zu functions\n", p->ast->length);
 }
@@ -100,7 +105,7 @@ state_ast_t* parse_function(token_stream_t* ts) {
 	expect(FUNC_TOK, ts); 
 	type_node_t* type = parse_types(ts); 
 	expect(L_PAREN_TOK, ts);
-	list_t* params = parse_params(ts, 1); 
+	list_t* params = parse_params(ts, True); 
 	expect(R_PAREN_TOK, ts); 
 	expect(ARROW_TOK, ts); 
 	
@@ -338,7 +343,7 @@ expr_ast_t* nud(token_stream_t* ts) {
 				case L_PAREN_TOK:
 					adv(ts); adv(ts);
 					char* func_name = ast->children.str_val; free(ast); 
-					ast = call_ast(func_name, parse_params(ts, 0), line, pos);
+					ast = call_ast(func_name, parse_params(ts, False), line, pos);
 					expect(R_PAREN_TOK, ts);
 					return ast; 
 				default: break; 
@@ -363,18 +368,22 @@ int expect(tok_type_t expected, token_stream_t* ts) {
 		adv(ts); 
 		return 1; 
 	}
-	/* TODO: have panic() print out error messages,
-	 expect just does checking
-	 call panic conditionally like: 
-	     my(4) ? puts("success"):0; 
-	*/ 
-	printf("ERROR: expected %d but got %d", expected, curr(ts).tok_type); 
+
+	int error_line = curr(ts).line;
+	int error_pos = curr(ts).pos; 
+	char* expect = tok_string(expected);
+	char* actual = tok_string(curr(ts).tok_type);
+
+	// panic mode for error handling and recovery
+	while (curr(ts).tok_type != R_PAREN_TOK &&
+		   curr(ts).tok_type != R_CURL_TOK &&
+		   curr(ts).tok_type != END_TOK &&
+		   curr(ts).tok_type != DEDENT_TOK) adv(ts); 
+
+	printf("PARSE ERROR: line %d, pos %d, expected %s but got %s (panic mode jumped to line %d, pos %d)\n", 
+		error_line, error_pos, expect, actual, curr(ts).line, curr(ts).pos); 
+
+	free(expect); free(actual);
+	
 	return 0;
 }
-
-// panic mode (error handling and recovery)
-// void panic(token_stream_t* ts) {
-// 	tok_type_t sync_tokens = {
-
-// 	}
-// }
