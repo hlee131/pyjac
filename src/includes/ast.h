@@ -123,6 +123,7 @@ typedef struct state_ast_s {
 
 } state_ast_t; 
 
+// constructors
 expr_ast_t* int_node(int val, int line, int pos);
 expr_ast_t* str_node(char* value, int line, int pos);
 expr_ast_t* double_node(double val, int line, int pos); 
@@ -140,5 +141,8 @@ state_ast_t* expr_ast(expr_ast_t* expr, int line, int pos);
 if_pair_t* if_pair(expr_ast_t* condition, list_t* block); 
 type_node_t* type_node(int type, int arr_count);
 id_ast_t* id_ast(char* name, type_node_t* id_type); 
+
+// semantic analysis methods
+int type_check(symtab_t* type_env, list_t* program); 
 
 #endif

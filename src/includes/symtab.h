@@ -12,10 +12,24 @@ typedef struct symtab_s {
 
 typedef struct symbol_s {
     enum { VAR, FUNC } kind;
-    type_node_t type;
+    
+    union {
+        struct var_type_s var_type;
+        struct func_type_s func_type;
+    } type;
+
     char* identifier; 
     int scope_id; 
 } symbol_t; 
+
+struct func_type_s {
+    type_node_t ret_type;
+    list_t* param_types; 
+};
+
+struct var_type_s {
+    type_node_t var_type; 
+};
 
 symtab_t* init_symtab(); 
 symbol_t* lookup(symtab_t* table, char* key);

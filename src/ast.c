@@ -3,6 +3,7 @@
 #include "includes/ast.h"
 #include "includes/list.h"
 #include "includes/utils.h"
+#include "includes/symtab.h"
 
 // constructors for expressions 
 expr_ast_t* int_node(int val, int line, int pos) {
@@ -164,4 +165,112 @@ id_ast_t* id_ast(char* name, type_node_t* id_type) {
 	ast->name = name;
 	ast->id_type = id_type;
 	return ast; 
+}
+
+// methods to perform semantic analysis on ast
+int type_check(symtab_t* type_env, list_t* program) {
+
+
+}
+
+type_node_t type_check_state(symtab_t* type_env, state_ast_t* statement) {
+
+}
+
+type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
+	type_node_t node = { .arr_count = 0 }; 
+	switch (expr->kind) {
+		// TODO: cant compare structs using ==
+		case BINOP:
+			type_node_t lhs = type_check_expr(type_env, expr->children.binop.lhs);
+			type_node_t rhs = type_check_expr(type_env, expr->children.binop.rhs);
+			if (lhs && rhs) {
+				switch (expr->children.binop.op) {
+					case ADD_NODE:
+						if (lhs == rhs && 
+							lhs.arr_count == 0 && 
+							lhs.type != BOOL_T) {
+								node.type = lhs.type; 
+								break; 
+							} else {
+								// TODO: error message 
+							}
+					case SUB_NODE:
+					case MUL_NODE:
+					case DIV_NODE:
+						if (lhs == rhs && 
+							lhs.arr_count == 0 && 
+							(lhs.type == INT_T ||
+							lhs.type == DOUBLE_T)) {
+								node.type = lhs.type;
+								break; 
+							} else {
+								// TODO: error message 
+							}
+					case EQ_NODE:
+					case NEQ_NODE:
+						if (lhs == rhs) {
+							node.type = BOOL_T;
+							break; 
+						} else {
+							// TODO: error message 
+						}
+					case LT_NODE:
+					case GT_NODE:
+					case LE_NODE:
+					case GE_NODE:
+						if (lhs == rhs && 
+							lhs.arr_count == 0 &&
+							(lhs.type == INT_T ||
+							lhs.type == DOUBLE_T)) {
+								node.type = BOOL_T; break; 
+							} else {
+								// TODO: error message 
+							}
+					case INDEX_NODE: 
+						if (lhs.arr_count != 0 && 
+							rhs.arr_count == 0 &&
+							rhs.type = INT_T
+						) {
+							node.type = lhs.type; break; 
+						} else {
+							// TODO: error message 
+						}
+					case ASSIGN_NODE: 
+						if (lhs.kind == ID_L) {
+							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
+							if (sym && sym->kind == VAR)  {
+								if (sym->type.var_type.var_type == rhs) {
+									node.type = rhs; break; 
+								} else {
+									TODO: error message 
+								}
+							} else {
+								// TODO: error message
+							}
+						} else {
+							// TODO: error message
+						}
+
+				}
+			} else {
+				// TODO: some sort of error message
+			}
+			break; 
+		case CALL: 
+			symbol_t* sym = lookup(type_env, expr->children.call_ast.func_name);
+			if (sym && sym->kind == FUNC) {
+				// TODO: type check parameters 
+			} 
+			// TODO: some sort of error message
+		case INT_L: node.type = INT_T; 
+		case DOUBLE_L: node.type = DOUBLE_T;
+		case STR_L: node.type = STR_T;
+		case ID_L: 
+			symbol_t* sym = lookup(type_env, expr->children.str_val);
+			if (sym && sym->kind == VAR) { node.type = sym->type; break; }
+			// TODO: some sort of error message
+		case BOOL_L: node.type = BOOL_T;
+		default: return NULL; 
+	}
 }
