@@ -1,5 +1,6 @@
 #ifndef AST_H
 #define AST_H
+#include <stdbool.h>
 #include "list.h" 
 
 typedef struct expr_ast_s expr_ast_t; 
@@ -143,6 +144,6 @@ type_node_t* type_node(int type, int arr_count);
 id_ast_t* id_ast(char* name, type_node_t* id_type); 
 
 // semantic analysis methods
-int type_check(symtab_t* type_env, list_t* program); 
+bool type_check(symtab_t* type_env, list_t* program); 
 
 #endif

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "includes/ast.h"
 #include "includes/list.h"
@@ -168,29 +169,101 @@ id_ast_t* id_ast(char* name, type_node_t* id_type) {
 }
 
 // methods to perform semantic analysis on ast
-int type_check(symtab_t* type_env, list_t* program) {
-
+/* 
+Purpose: the driver function to type check a block of code
+Return type: a boolean representing whether type checing 
+	succeeded or failed 
+*/ 
+bool type_check(symtab_t* type_env, list_t* program) {
+	// TODO: manage symbol table
 
 }
 
-type_node_t type_check_state(symtab_t* type_env, state_ast_t* statement) {
-
+/* 
+Purpose: type checks a statement
+Return type: a boolean representing whether type checking 
+	succeeded or failed 
+*/ 
+bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
+	bool success = true; 
+	
+	switch (statement->kind) {
+		case IF: 
+			list_el_t* next = statement->children.if_tree.if_pairs->head;
+			while (next) {
+				list_el_t* curr = next;
+				next = curr->next; 
+				type_node_t* expr_type = type_check_expr(type_env, 
+					((if_pair_t*) curr->current_ele)->condition);
+				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
+					free(expr_type);
+					success &= type_check(type_env, 
+						((if_pair_t*) curr->current_ele)->block);
+				} else {
+					// TODO: error message
+				}
+			}
+			break; 
+		case FOR:
+			if (statement->children.for_tree.initializer->kind == ASSIGN) {
+				type_node_t* expr_type = type_check_expr(type_env, 
+					statement->children.for_tree.condition);
+				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
+					free(expr_type);
+					// TODO: can updater be a function call? 
+				} else {
+					// TODO: error message
+				}
+			} else {
+				// TODO: error message 
+			}
+			break; 
+		case WHILE:
+			type_node_t* expr_type = type_check_expr(type_env, 
+				statement->children.while_tree.condition);
+			if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
+				free(expr_type);
+				success &= type_check(type_env, statement->children.while_tree.block);
+			} else {
+				// TODO: error message 
+			}
+		case FUNC:
+		case RET:
+		case ASSIGN:
+		case EXPR:
+			type_node_t* expr_type = type_check_expr(type_env, 
+				&(statement->children.expr));
+			if (expr_type) {
+				free(expr_type);
+				success &= true; 
+			} else success &= false; 
+			break; 
+		default: return false; 
+	}
 }
 
-type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
-	type_node_t node = { .arr_count = 0 }; 
+/* 
+Purpose: type checks an expression 
+Return type: a pointer to a type_node_t structure if the types were correct
+	otherwise, a null pointer is returned, symbolizing a type error. 
+Misc: callee is expected to free the struct pointer 
+*/ 
+type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
+	
+	int arr_count = 0; 
+	int type; 
+
 	switch (expr->kind) {
-		// TODO: cant compare structs using ==
 		case BINOP:
-			type_node_t lhs = type_check_expr(type_env, expr->children.binop.lhs);
-			type_node_t rhs = type_check_expr(type_env, expr->children.binop.rhs);
+			type_node_t* lhs = type_check_expr(type_env, expr->children.binop.lhs);
+			type_node_t* rhs = type_check_expr(type_env, expr->children.binop.rhs);
 			if (lhs && rhs) {
 				switch (expr->children.binop.op) {
 					case ADD_NODE:
 						if (lhs == rhs && 
-							lhs.arr_count == 0 && 
-							lhs.type != BOOL_T) {
-								node.type = lhs.type; 
+							lhs->arr_count == 0 && 
+							lhs->type != BOOL_T) {
+								type = lhs->type; 
 								break; 
 							} else {
 								// TODO: error message 
@@ -199,10 +272,10 @@ type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case MUL_NODE:
 					case DIV_NODE:
 						if (lhs == rhs && 
-							lhs.arr_count == 0 && 
-							(lhs.type == INT_T ||
-							lhs.type == DOUBLE_T)) {
-								node.type = lhs.type;
+							lhs->.arr_count == 0 && 
+							(lhs->.type == INT_T ||
+							lhs->.type == DOUBLE_T)) {
+								type = lhs->.type;
 								break; 
 							} else {
 								// TODO: error message 
@@ -210,7 +283,7 @@ type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case EQ_NODE:
 					case NEQ_NODE:
 						if (lhs == rhs) {
-							node.type = BOOL_T;
+							type = BOOL_T;
 							break; 
 						} else {
 							// TODO: error message 
@@ -220,30 +293,30 @@ type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case LE_NODE:
 					case GE_NODE:
 						if (lhs == rhs && 
-							lhs.arr_count == 0 &&
-							(lhs.type == INT_T ||
-							lhs.type == DOUBLE_T)) {
-								node.type = BOOL_T; break; 
+							lhs->arr_count == 0 &&
+							(lhs->type == INT_T ||
+							lhs->type == DOUBLE_T)) {
+								type = BOOL_T; break; 
 							} else {
 								// TODO: error message 
 							}
 					case INDEX_NODE: 
-						if (lhs.arr_count != 0 && 
-							rhs.arr_count == 0 &&
-							rhs.type = INT_T
+						if (lhs->arr_count != 0 && 
+							rhs->arr_count == 0 &&
+							rhs->type == INT_T
 						) {
-							node.type = lhs.type; break; 
+							type = lhs->type; break; 
 						} else {
 							// TODO: error message 
 						}
 					case ASSIGN_NODE: 
-						if (lhs.kind == ID_L) {
+						if (expr->children.binop.lhs->kind == ID_L) {
 							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
 							if (sym && sym->kind == VAR)  {
 								if (sym->type.var_type.var_type == rhs) {
-									node.type = rhs; break; 
+									type = rhs; break; 
 								} else {
-									TODO: error message 
+									// TODO: error message 
 								}
 							} else {
 								// TODO: error message
@@ -258,19 +331,24 @@ type_node_t type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			}
 			break; 
 		case CALL: 
-			symbol_t* sym = lookup(type_env, expr->children.call_ast.func_name);
+			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
 			if (sym && sym->kind == FUNC) {
 				// TODO: type check parameters 
 			} 
 			// TODO: some sort of error message
-		case INT_L: node.type = INT_T; 
-		case DOUBLE_L: node.type = DOUBLE_T;
-		case STR_L: node.type = STR_T;
+		case INT_L: type = INT_T; 
+		case DOUBLE_L: type = DOUBLE_T;
+		case STR_L: type = STR_T;
 		case ID_L: 
 			symbol_t* sym = lookup(type_env, expr->children.str_val);
-			if (sym && sym->kind == VAR) { node.type = sym->type; break; }
+			if (sym && sym->kind == VAR) { 
+				type = sym->type.var_type.var_type.type; 
+				arr_count =  sym->type.var_type.var_type.arr_count; 
+			}
 			// TODO: some sort of error message
-		case BOOL_L: node.type = BOOL_T;
+		case BOOL_L: type = BOOL_T;
 		default: return NULL; 
 	}
+
+	return type_node(type, arr_count);
 }

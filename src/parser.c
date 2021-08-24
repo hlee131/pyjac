@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h> 
+#include <stdbool.h>
 
 #include "includes/parser.h" 
 #include "includes/lexer.h"
@@ -10,8 +11,6 @@
 #define peek(ts) (ts->stream[ts->stream_pos+1])
 #define adv(ts) (ts->stream_pos++) 
 #define curr(ts) (ts->stream[ts->stream_pos]) 
-#define True 1 
-#define False 0 
 
 parser_t* init_parser(char* src) {
 	parser_t* parser = (parser_t*) checked_malloc(sizeof(parser_t));
@@ -73,7 +72,7 @@ type_node_t* parse_types(token_stream_t* ts) {
 }
 
 
-list_t* parse_params(token_stream_t* ts, int is_formal_params) {
+list_t* parse_params(token_stream_t* ts, bool is_formal_params) {
 	
 	list_t* params = init_list(); 
 
@@ -105,7 +104,7 @@ state_ast_t* parse_function(token_stream_t* ts) {
 	expect(FUNC_TOK, ts); 
 	type_node_t* type = parse_types(ts); 
 	expect(L_PAREN_TOK, ts);
-	list_t* params = parse_params(ts, True); 
+	list_t* params = parse_params(ts, true); 
 	expect(R_PAREN_TOK, ts); 
 	expect(ARROW_TOK, ts); 
 	
@@ -343,15 +342,15 @@ expr_ast_t* nud(token_stream_t* ts) {
 				case L_PAREN_TOK:
 					adv(ts); adv(ts);
 					char* func_name = ast->children.str_val; free(ast); 
-					ast = call_ast(func_name, parse_params(ts, False), line, pos);
+					ast = call_ast(func_name, parse_params(ts, false), line, pos);
 					expect(R_PAREN_TOK, ts);
 					return ast; 
 				default: break; 
 			}
 			break; 
-		case TRUE_TOK:
+		case true_TOK:
 			ast = bool_node(1, line, pos); break; 
-		case FALSE_TOK:
+		case false_TOK:
 			ast = bool_node(0, line, pos); break;
 		case L_PAREN_TOK:
 			adv(ts);
