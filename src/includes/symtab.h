@@ -13,28 +13,26 @@ typedef struct symtab_s {
 typedef struct symbol_s {
     enum { VAR, FUNC } kind;
     
-    union {
-        struct var_type_s var_type;
-        struct func_type_s func_type;
-    } type;
+    // points to a func_type_t or a var_type_t
+    void* type_ptr; 
 
     char* identifier; 
     int scope_id; 
 } symbol_t; 
 
-struct func_type_s {
+typedef struct func_type_s {
     type_node_t ret_type;
     list_t* param_types; 
-};
+} func_type_t;
 
-struct var_type_s {
+typedef struct var_type_s {
     type_node_t var_type; 
-};
+} var_type_t;
 
 symtab_t* init_symtab(); 
 symbol_t* lookup(symtab_t* table, char* key);
 void insert(symtab_t* table, symbol_t* symbol); 
-symbol_t* init_symbol(int kind, type_node_t type, char* identifier, int sid);
+symbol_t* init_symbol(int kind, void* type_ptr, char* identifier, int sid);
 int get_index(char* key);
 void exit_scope(symtab_t* table);
 static inline void enter_scope(symtab_t* table);

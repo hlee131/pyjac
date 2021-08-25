@@ -11,10 +11,12 @@ symtab_t* init_symtab() {
     }
 }
 
-symbol_t* init_symbol(int kind, type_node_t type, char* identifier, int sid) {
+symbol_t* init_symbol(int kind, void* type_ptr, char* identifier, int sid) {
     symbol_t* symbol = checked_malloc(sizeof(symbol_t));
-    symbol->kind = kind;
-    symbol->type = type;
+    
+    if (kind == VAR) symbol->type_ptr = (var_type_t*) type_ptr; 
+    else symbol->type_ptr = (func_type_t*) type_ptr; 
+
     symbol->identifier = identifier;
     symbol->scope_id = sid; 
     return symbol; 

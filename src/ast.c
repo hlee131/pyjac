@@ -170,13 +170,37 @@ id_ast_t* id_ast(char* name, type_node_t* id_type) {
 
 // methods to perform semantic analysis on ast
 /* 
-Purpose: the driver function to type check a block of code
-Return type: a boolean representing whether type checing 
+Purpose: the driver function to type check ast 
+Return type: a boolean representing whether type checking 
 	succeeded or failed 
 */ 
-bool type_check(symtab_t* type_env, list_t* program) {
+bool do_type_check(symtab_t* type_env, list_t* program) {
 	// TODO: manage symbol table
 
+}
+
+// TODO: use type_check_block
+/*
+Purpose: type checks a block of statements, is responsible for 
+	managing scope. 
+Return type: a boolean representing whether type checking 
+	succeeded or failed. 
+*/
+bool type_check_block(symtab_t* type_env, list_t* block) {
+	bool success = true; 
+	enter_scope(type_env);
+
+	list_el_t* next = block->head;
+
+	while (next) {
+		list_el_t* curr = next;
+		next = next->next;
+
+		success &= type_check_state(type_env, (state_ast_t*) (curr->current_ele));
+	}
+
+	exit_scope(type_env); 
+	return success; 
 }
 
 /* 
@@ -197,7 +221,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 					((if_pair_t*) curr->current_ele)->condition);
 				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
 					free(expr_type);
-					success &= type_check(type_env, 
+					success &= type_check_block(type_env, 
 						((if_pair_t*) curr->current_ele)->block);
 				} else {
 					// TODO: error message
@@ -210,7 +234,18 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 					statement->children.for_tree.condition);
 				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
 					free(expr_type);
-					// TODO: can updater be a function call? 
+					// TODO: only specific binary operations? 
+					if (statement->children.for_tree.updater->kind == BINOP) {
+						symbol_t* sym = init_symbol(VAR, 
+							statement->children.for_tree.initializer->children.assign.identifier->id_type,
+							statement->children.for_tree.initializer->children.assign.identifier->name,
+							type_env->curr_sid + 1);
+						insert(type_env, sym);
+						success &= type_check_block(type_env, statement->children.for_tree.block);
+						break; 
+					} else {
+						// TODO: error message 
+					}
 				} else {
 					// TODO: error message
 				}
@@ -223,13 +258,29 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				statement->children.while_tree.condition);
 			if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
 				free(expr_type);
-				success &= type_check(type_env, statement->children.while_tree.block);
+				success &= type_check_block(type_env, statement->children.while_tree.block);
 			} else {
 				// TODO: error message 
 			}
 		case FUNC:
+			// add parameters to new scope 
+			list_el_t* next = statement->children.func.params->head;
+			while (next) {
+				list_el_t* curr = next;
+				next = next->next; 
+				symbol_t* sym = init_symbol(VAR, (id_ast_t*) (curr->current_ele)->id_type, 
+					(id_ast_t*) (curr->current_ele)->name, type_env->curr_sid + 1);
+				insert(type_env, sym);
+			}
+			success &= type_check_block(type_env, statement->children.func.block);
+			break; 
 		case RET:
+			/* will be type checked in second traversal */ break; 
 		case ASSIGN:
+			symbol_t* sym = init_symbol(VAR, statement->children.assign.identifier->id_type, 
+				statement->children.assign.identifier->name, type_env->curr_sid);
+			insert(type_env, sym);
+			break; 
 		case EXPR:
 			type_node_t* expr_type = type_check_expr(type_env, 
 				&(statement->children.expr));
