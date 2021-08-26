@@ -38,14 +38,11 @@ void append_head(list_t* list, void* value) {
 
 // TODO: recursively free the tree
 void free_list(list_t* list) {
-	list_el_t* next = list->head;
 
-	while (next) {
-		list_el_t* curr = next; 
-		next = next->next; 
+	foreach(list) {
 		free(curr->current_ele);
-		free(curr); 
-	} 
+		free(curr);
+	}
 
 	free(list); 
 }

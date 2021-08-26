@@ -11,6 +11,8 @@ When the lexer sees a character that it does not recognize, the lexer will print
 ## Parser
 The parser is a simple LL(1) predictive parser (recursive descent with no backtracking) for statements used in combination with a Pratt parser for expressions. The parser produces an abstract syntax tree, rather than a concrete syntax tree, for type checking, optimizations, code generation, etc. 
 
+## Type checking
+The first phase of semantic analysis is type checking. The type checker uses a multi-pass traversal of the tree in order to allow features such as out of order functions. In the first pass, the type checker collects all global members, i.e. functions. In the second pass, the type checker checks each individual statement and expression. 
 
 ## Future improvements
 ### Priority 

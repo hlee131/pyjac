@@ -4,6 +4,7 @@
 #include "ast.h"
 
 #define BUCKET_COUNT 13
+#define enter_scope(symtab) (table->curr_side++)
 
 typedef struct symtab_s {
     list_t* stacks[BUCKET_COUNT]; 
@@ -11,29 +12,27 @@ typedef struct symtab_s {
 } symtab_t; 
 
 typedef struct symbol_s {
-    enum { VAR, FUNC } kind;
+    enum { VAR_SYM, FUNC_SYM } kind;
     
     // points to a func_type_t or a var_type_t
-    void* type_ptr; 
+    union {
+        struct {
+            struct type_node_s* ret_type;
+            list_t* param_types; 
+        } func_signature; 
+        struct type_node_s* var_type; 
+    } type; 
 
     char* identifier; 
     int scope_id; 
 } symbol_t; 
 
-typedef struct func_type_s {
-    type_node_t ret_type;
-    list_t* param_types; 
-} func_type_t;
-
-typedef struct var_type_s {
-    type_node_t var_type; 
-} var_type_t;
 
 symtab_t* init_symtab(); 
 symbol_t* lookup(symtab_t* table, char* key);
 void insert(symtab_t* table, symbol_t* symbol); 
-symbol_t* init_symbol(int kind, void* type_ptr, char* identifier, int sid);
+symbol_t* init_var_sym(struct type_node_s* type, char* name, int sid);
+symbol_t* init_func_sym(struct type_node_s* ret_type, list_t* param_types, char* name, int sid);
 int get_index(char* key);
 void exit_scope(symtab_t* table);
-static inline void enter_scope(symtab_t* table);
 #endif

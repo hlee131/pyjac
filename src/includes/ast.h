@@ -2,6 +2,7 @@
 #define AST_H
 #include <stdbool.h>
 #include "list.h" 
+#include "symtab.h"
 
 typedef struct expr_ast_s expr_ast_t; 
 typedef struct state_ast_s state_ast_t; 
@@ -144,6 +145,10 @@ type_node_t* type_node(int type, int arr_count);
 id_ast_t* id_ast(char* name, type_node_t* id_type); 
 
 // semantic analysis methods
-bool type_check(symtab_t* type_env, list_t* program); 
+bool do_type_check(list_t* program); 
+symtab_t* make_global_symtab(list_t* program);
+bool type_check_block(symtab_t* type_env, list_t* block);
+bool type_check_state(symtab_t* type_env, state_ast_t* statement);
+type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr);
 
 #endif

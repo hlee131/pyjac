@@ -174,12 +174,56 @@ Purpose: the driver function to type check ast
 Return type: a boolean representing whether type checking 
 	succeeded or failed 
 */ 
-bool do_type_check(symtab_t* type_env, list_t* program) {
-	// TODO: manage symbol table
+bool do_type_check(list_t* program) {
+	
+	symtab_t* globals = make_global_symtab(program);
+	bool success = true;
+
+	foreach(program) {
+		state_ast_t* function = curr->current_ele;
+
+		foreach(function->children.func.params) {
+			symbol_t* sym = init_var_sym((id_ast_t*) (curr->current_ele)->id_type, 
+				(id_ast_t*) (curr->current_ele)->name, globals->curr_sid + 1);
+			insert(globals, sym);
+		}
+
+		success &= type_check_block(globals, function->children.func.block);
+	}
+
+	return success;
 
 }
 
-// TODO: use type_check_block
+/*
+Purpose: generates a symbol table containing all top-level members
+	Currently, only functions exist as top-level members.
+	In the future, it may be expanded to variables and such. 
+Return type: a populated symbol table 
+*/
+symtab_t* make_global_symtab(list_t* program) {
+	
+	symtab_t* symtab = init_symtab();
+
+	foreach(program) {
+		state_ast_t* func = (state_ast_t*) (curr->current_ele); 
+		if (func->kind == FUNC) {
+			// get param types 
+			list_t* param_types = init_list();
+			for (list_el_t* param = (list_el_t*) (func->children.func.params->head),
+				 param, param = param->next) {
+					append(param_types, (list_el_t*) param->current_ele->id_type);
+				 }
+				
+			symbol_t* func_sym = init_func_sym(func->children.func.identifier->id_type,
+				param_types, func->children.func.identifier->name, 0);
+			insert(symtab, func_sym);
+		}
+	}
+
+	return symtab; 
+}
+
 /*
 Purpose: type checks a block of statements, is responsible for 
 	managing scope. 
@@ -192,10 +236,7 @@ bool type_check_block(symtab_t* type_env, list_t* block) {
 
 	list_el_t* next = block->head;
 
-	while (next) {
-		list_el_t* curr = next;
-		next = next->next;
-
+	foreach(block) {
 		success &= type_check_state(type_env, (state_ast_t*) (curr->current_ele));
 	}
 
@@ -213,10 +254,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 	
 	switch (statement->kind) {
 		case IF: 
-			list_el_t* next = statement->children.if_tree.if_pairs->head;
-			while (next) {
-				list_el_t* curr = next;
-				next = curr->next; 
+			foreach(statement->children.if_tree.if_pairs) {
 				type_node_t* expr_type = type_check_expr(type_env, 
 					((if_pair_t*) curr->current_ele)->condition);
 				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
@@ -236,7 +274,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 					free(expr_type);
 					// TODO: only specific binary operations? 
 					if (statement->children.for_tree.updater->kind == BINOP) {
-						symbol_t* sym = init_symbol(VAR, 
+						symbol_t* sym = init_var_sym( 
 							statement->children.for_tree.initializer->children.assign.identifier->id_type,
 							statement->children.for_tree.initializer->children.assign.identifier->name,
 							type_env->curr_sid + 1);
@@ -264,20 +302,12 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			}
 		case FUNC:
 			// add parameters to new scope 
-			list_el_t* next = statement->children.func.params->head;
-			while (next) {
-				list_el_t* curr = next;
-				next = next->next; 
-				symbol_t* sym = init_symbol(VAR, (id_ast_t*) (curr->current_ele)->id_type, 
-					(id_ast_t*) (curr->current_ele)->name, type_env->curr_sid + 1);
-				insert(type_env, sym);
-			}
-			success &= type_check_block(type_env, statement->children.func.block);
+			// TODO: disallow nested functions
 			break; 
 		case RET:
-			/* will be type checked in second traversal */ break; 
+			/* will be type checked in previous traversal */ break; 
 		case ASSIGN:
-			symbol_t* sym = init_symbol(VAR, statement->children.assign.identifier->id_type, 
+			symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type,
 				statement->children.assign.identifier->name, type_env->curr_sid);
 			insert(type_env, sym);
 			break; 
