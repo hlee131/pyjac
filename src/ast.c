@@ -188,6 +188,7 @@ bool do_type_check(list_t* program) {
 			insert(globals, sym);
 		}
 
+		// TODO: is &= really needed? 
 		success &= type_check_block(globals, function->children.func.block);
 	}
 
@@ -353,8 +354,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			if (lhs && rhs) {
 				switch (expr->children.binop.op) {
 					case ADD_NODE:
-						// TODO: compare types not pointers
-						if (lhs == rhs && 
+						if (type_cmp(lhs, rhs) && 
 							lhs->arr_count == 0 && 
 							lhs->type != BOOL_T) {
 								type = lhs->type; 
@@ -365,8 +365,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case SUB_NODE:
 					case MUL_NODE:
 					case DIV_NODE:
-						// TODO: compare types not pointers
-						if (lhs == rhs && 
+						if (type_cmp(lhs, rhs) && 
 							lhs->arr_count == 0 && 
 							(lhs->type == INT_T ||
 							lhs->type == DOUBLE_T)) {
@@ -377,8 +376,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 							}
 					case EQ_NODE:
 					case NEQ_NODE:
-						// TODO: compare types not pointers 
-						if (lhs == rhs) {
+						if (type_cmp(lhs, rhs)) {
 							type = BOOL_T;
 							break; 
 						} else {
@@ -388,7 +386,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case GT_NODE:
 					case LE_NODE:
 					case GE_NODE:
-						if (lhs == rhs && 
+						if (type_cmp(lhs, rhs) && 
 							lhs->arr_count == 0 &&
 							(lhs->type == INT_T ||
 							lhs->type == DOUBLE_T)) {
@@ -409,8 +407,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 						if (expr->children.binop.lhs->kind == ID_L) {
 							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
 							if (sym && sym->kind == VAR_SYM)  {
-								// TODO: compare types not pointers 
-								if (sym->type.var_type == rhs) {
+								if (type_cmp(sym->type.var_type, rhs)) {
 									type = rhs; break; 
 								} else {
 									// TODO: error message 
@@ -429,11 +426,38 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			break; 
 		}
 		case CALL: {
+			bool erroneous = false; 
 			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
 			if (sym && sym->kind == FUNC_SYM) {
-				// TODO: type check parameters 
-			} 
-			// TODO: some sort of error message
+				list_el_t* expected_types = sym->type.func_signature.param_types->head; 
+				foreach(expr->children.call.params) {
+					type_node_t* actual = curr->current_ele;
+					type_node_t* formal = expected_types->current_ele;
+
+					if (!expected_types) {
+						// TODO: error too many params
+						break; 
+					}
+
+					if (!type_cmp(actual, formal)) {
+						erroneous = 1;
+						// TODO: some error message 
+					}
+
+					expected_types = expected_types->next;
+				}
+
+				if (expected_types) {
+					// TODO: error, too little params
+				}
+
+				if (!erroneous) {
+					type = sym->type.func_signature.ret_type->type;
+					arr_count = sym->type.func_signature.ret_type->arr_count;
+				} 
+			} else {
+				// TODO: error is not a function
+			}
 			break; 
 		}
 		case INT_L: type = INT_T; 
@@ -443,7 +467,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			symbol_t* sym = lookup(type_env, expr->children.str_val);
 			if (sym && sym->kind == VAR_SYM) { 
 				type = sym->type.var_type->type;
-				arr_count =  sym->type.var_type->arr_count;
+				arr_count = sym->type.var_type->arr_count;
 			}
 			// TODO: some sort of error message
 			break;

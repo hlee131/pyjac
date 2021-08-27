@@ -9,6 +9,7 @@ typedef struct state_ast_s state_ast_t;
 typedef struct id_ast_s id_ast_t; 
 typedef struct type_node_s type_node_t; 
 
+#define type_cmp(t1, t2) ((t1->arr_count == t2->arr_count) && (t1->type == t2->type))
 
 // ast for binary operations, i.e. +, -, ...
 struct binop_ast {
