@@ -143,6 +143,7 @@ state_ast_t* expr_ast(expr_ast_t* expr, int line, int pos) {
 	ast->children.expr = *expr; 
 	ast->line = line;
 	ast->pos = pos;
+	ast->kind = EXPR; 
 	return ast; 
 }
 
@@ -179,12 +180,12 @@ bool do_type_check(list_t* program) {
 	symtab_t* globals = make_global_symtab(program);
 	bool success = true;
 
-	foreach(program) {
+	foreach(program, curr) {
 		state_ast_t* function = curr->current_ele;
 
-		foreach(function->children.func.params) {
-			symbol_t* sym = init_var_sym(((id_ast_t*) (curr->current_ele))->id_type, 
-				((id_ast_t*) (curr->current_ele))->name, globals->curr_sid + 1);
+		foreach(function->children.func.params, param) {
+			symbol_t* sym = init_var_sym(((id_ast_t*) (param->current_ele))->id_type, 
+				((id_ast_t*) (param->current_ele))->name, globals->curr_sid + 1);
 			insert(globals, sym);
 		}
 
@@ -206,7 +207,7 @@ symtab_t* make_global_symtab(list_t* program) {
 	
 	symtab_t* symtab = init_symtab();
 
-	foreach(program) {
+	foreach(program, curr) {
 		state_ast_t* func = (state_ast_t*) (curr->current_ele); 
 		if (func->kind == FUNC) {
 			
@@ -215,11 +216,9 @@ symtab_t* make_global_symtab(list_t* program) {
 			} else {
 				// get param types 
 				list_t* param_types = init_list();
-				for (list_el_t* param = (list_el_t*) (func->children.func.params->head);
-					param; param = param->next) {
-						append(param_types, ((id_ast_t*) ((list_el_t*) param)->current_ele)->id_type);
-					}
-					
+				foreach(func->children.func.params, param) {
+					append(param_types, ((id_ast_t*) ((list_el_t*) param)->current_ele)->id_type);
+				}	
 				symbol_t* func_sym = init_func_sym(func->children.func.identifier->id_type,
 					param_types, func->children.func.identifier->name, 0);
 				insert(symtab, func_sym);
@@ -239,7 +238,7 @@ bool type_check_block(symtab_t* type_env, list_t* block) {
 	bool success = true; 
 	enter_scope(type_env);
 
-	foreach(block) {
+	foreach(block, curr) {
 		success &= type_check_state(type_env, (state_ast_t*) (curr->current_ele));
 	}
 
@@ -254,10 +253,9 @@ Return type: a boolean representing whether type checking
 */ 
 bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 	bool success = true; 
-	
 	switch (statement->kind) {
 		case IF: 
-			foreach(statement->children.if_tree.if_pairs) {
+			foreach(statement->children.if_tree.if_pairs, curr) {
 				type_node_t* expr_type = type_check_expr(type_env, 
 					((if_pair_t*) curr->current_ele)->condition);
 				if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
@@ -309,6 +307,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			// TODO: disallow nested functions
 			break; 
 		case RET:
+			// TODO: check return types 
 			/* will be type checked in previous traversal */ break; 
 		case ASSIGN:
 			if (lookup(type_env, statement->children.assign.identifier->name)) {
@@ -408,7 +407,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
 							if (sym && sym->kind == VAR_SYM)  {
 								if (type_cmp(sym->type.var_type, rhs)) {
-									type = rhs; break; 
+									type = rhs->type; break; 
 								} else {
 									// TODO: error message 
 								}
@@ -430,7 +429,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
 			if (sym && sym->kind == FUNC_SYM) {
 				list_el_t* expected_types = sym->type.func_signature.param_types->head; 
-				foreach(expr->children.call.params) {
+				foreach(expr->children.call.params, curr) {
 					type_node_t* actual = curr->current_ele;
 					type_node_t* formal = expected_types->current_ele;
 
@@ -460,9 +459,9 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			}
 			break; 
 		}
-		case INT_L: type = INT_T; 
-		case DOUBLE_L: type = DOUBLE_T;
-		case STR_L: type = STR_T;
+		case INT_L: type = INT_T; break; 
+		case DOUBLE_L: type = DOUBLE_T; break; 
+		case STR_L: type = STR_T; break; 
 		case ID_L: {
 			symbol_t* sym = lookup(type_env, expr->children.str_val);
 			if (sym && sym->kind == VAR_SYM) { 
@@ -472,7 +471,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			// TODO: some sort of error message
 			break;
 		}
-		case BOOL_L: type = BOOL_T;
+		case BOOL_L: type = BOOL_T; break; 
 		default: return NULL; 
 	}
 

@@ -9,6 +9,7 @@ symtab_t* init_symtab() {
     for (int i = 0; i < BUCKET_COUNT; i++) {
         table->stacks[i] = init_list();
     }
+    return table; 
 }
 
 symbol_t* init_var_sym(type_node_t* type, char* name, int sid) {
@@ -32,14 +33,14 @@ symbol_t* init_func_sym(type_node_t* ret_type, list_t* param_types, char* name, 
 
 int get_index(char* key) {
     int sum = 0;
-    while (*key != 0) sum += (int) key++; 
+    while (*key) sum += (int) *(key++); 
     return sum % BUCKET_COUNT; 
 }
 
 symbol_t* lookup(symtab_t* table, char* key) {
     int index = get_index(key);
     
-    foreach(table->stacks[index]) {
+    foreach(table->stacks[index], curr) {
         if (strcmp(((symbol_t*) curr->current_ele)->identifier, key) == 0) {
             return curr->current_ele; 
         }
@@ -55,13 +56,15 @@ void insert(symtab_t* table, symbol_t* symbol) {
 
 void exit_scope(symtab_t* table) {
     for (int i = 0; i < BUCKET_COUNT; i++) {
-        foreach(table->stacks[i]) {
-            if (((symbol_t *) curr->current_ele)->scope_id == table->curr_sid) {
-                free(curr->current_ele);
-                free(curr); 
-                table->stacks[i]->head = curr->next;
-            } else break; 
-        }
+            if (table->stacks[i]->length == 0) continue; 
+            while (table->stacks[i]->length != 0 && 
+            ((symbol_t*) (table->stacks[i]->head->current_ele))->scope_id == table->curr_sid) {
+                list_el_t* new_head = table->stacks[i]->head->next; 
+                free(table->stacks[i]->head->current_ele);    // free symbol
+                free(table->stacks[i]->head);                 // free list element 
+                table->stacks[i]->head = new_head;            // set linked list new head 
+                table->stacks[i]->length--; 
+            }
     }
 
     table->curr_sid--; 

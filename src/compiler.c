@@ -4,6 +4,7 @@
 #include "includes/parser.h"
 #include "includes/compiler.h" 
 #include "includes/utils.h"
+#include "includes/symtab.h"
 
 int main(int argc, char* argv[]) {
 	
@@ -22,6 +23,12 @@ int main(int argc, char* argv[]) {
 		// }
 		// printf("%d\n", parser->token_stream->stream_len);
 		parse_program(parser);
+		bool types = do_type_check(parser->ast);
+		if (types) {
+			puts("types correct");
+		} else {
+			puts("types incorrect");
+		}
 		return 0; 
 	} else {
 		puts("error: invalid file name");
