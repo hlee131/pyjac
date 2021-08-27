@@ -146,9 +146,9 @@ id_ast_t* id_ast(char* name, type_node_t* id_type);
 
 // semantic analysis methods
 bool do_type_check(list_t* program); 
-symtab_t* make_global_symtab(list_t* program);
-bool type_check_block(symtab_t* type_env, list_t* block);
-bool type_check_state(symtab_t* type_env, state_ast_t* statement);
-type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr);
+struct symtab_s* make_global_symtab(list_t* program);
+bool type_check_block(struct symtab_s* type_env, list_t* block);
+bool type_check_state(struct symtab_s* type_env, state_ast_t* statement);
+type_node_t* type_check_expr(struct symtab_s* type_env, expr_ast_t* expr);
 
 #endif

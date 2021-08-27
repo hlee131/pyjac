@@ -348,9 +348,9 @@ expr_ast_t* nud(token_stream_t* ts) {
 				default: break; 
 			}
 			break; 
-		case true_TOK:
+		case TRUE_TOK:
 			ast = bool_node(1, line, pos); break; 
-		case false_TOK:
+		case FALSE_TOK:
 			ast = bool_node(0, line, pos); break;
 		case L_PAREN_TOK:
 			adv(ts);

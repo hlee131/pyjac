@@ -4,7 +4,7 @@
 #include "ast.h"
 
 #define BUCKET_COUNT 13
-#define enter_scope(symtab) (table->curr_side++)
+#define enter_scope(symtab) (symtab->curr_sid++)
 
 typedef struct symtab_s {
     list_t* stacks[BUCKET_COUNT]; 

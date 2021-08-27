@@ -183,8 +183,8 @@ bool do_type_check(list_t* program) {
 		state_ast_t* function = curr->current_ele;
 
 		foreach(function->children.func.params) {
-			symbol_t* sym = init_var_sym((id_ast_t*) (curr->current_ele)->id_type, 
-				(id_ast_t*) (curr->current_ele)->name, globals->curr_sid + 1);
+			symbol_t* sym = init_var_sym(((id_ast_t*) (curr->current_ele))->id_type, 
+				((id_ast_t*) (curr->current_ele))->name, globals->curr_sid + 1);
 			insert(globals, sym);
 		}
 
@@ -208,19 +208,23 @@ symtab_t* make_global_symtab(list_t* program) {
 	foreach(program) {
 		state_ast_t* func = (state_ast_t*) (curr->current_ele); 
 		if (func->kind == FUNC) {
-			// get param types 
-			list_t* param_types = init_list();
-			for (list_el_t* param = (list_el_t*) (func->children.func.params->head),
-				 param, param = param->next) {
-					append(param_types, (list_el_t*) param->current_ele->id_type);
-				 }
-				
-			symbol_t* func_sym = init_func_sym(func->children.func.identifier->id_type,
-				param_types, func->children.func.identifier->name, 0);
-			insert(symtab, func_sym);
+			
+			if (lookup(symtab, func->children.func.identifier->name)) {
+				// TODO: error: function already declared
+			} else {
+				// get param types 
+				list_t* param_types = init_list();
+				for (list_el_t* param = (list_el_t*) (func->children.func.params->head);
+					param; param = param->next) {
+						append(param_types, ((id_ast_t*) ((list_el_t*) param)->current_ele)->id_type);
+					}
+					
+				symbol_t* func_sym = init_func_sym(func->children.func.identifier->id_type,
+					param_types, func->children.func.identifier->name, 0);
+				insert(symtab, func_sym);
+			}
 		}
 	}
-
 	return symtab; 
 }
 
@@ -233,8 +237,6 @@ Return type: a boolean representing whether type checking
 bool type_check_block(symtab_t* type_env, list_t* block) {
 	bool success = true; 
 	enter_scope(type_env);
-
-	list_el_t* next = block->head;
 
 	foreach(block) {
 		success &= type_check_state(type_env, (state_ast_t*) (curr->current_ele));
@@ -291,7 +293,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				// TODO: error message 
 			}
 			break; 
-		case WHILE:
+		case WHILE: {
 			type_node_t* expr_type = type_check_expr(type_env, 
 				statement->children.while_tree.condition);
 			if (expr_type && expr_type->type == BOOL_T && expr_type->arr_count == 0) {
@@ -300,6 +302,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			} else {
 				// TODO: error message 
 			}
+		}
 		case FUNC:
 			// add parameters to new scope 
 			// TODO: disallow nested functions
@@ -307,11 +310,16 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 		case RET:
 			/* will be type checked in previous traversal */ break; 
 		case ASSIGN:
-			symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type,
-				statement->children.assign.identifier->name, type_env->curr_sid);
-			insert(type_env, sym);
-			break; 
-		case EXPR:
+			if (lookup(type_env, statement->children.assign.identifier->name)) {
+				// TODO: error variable already in scope 
+				break; 
+			} else {
+				symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type,
+					statement->children.assign.identifier->name, type_env->curr_sid);
+				insert(type_env, sym);
+				break; 
+			}
+		case EXPR: {
 			type_node_t* expr_type = type_check_expr(type_env, 
 				&(statement->children.expr));
 			if (expr_type) {
@@ -319,8 +327,12 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				success &= true; 
 			} else success &= false; 
 			break; 
+		}
+
 		default: return false; 
 	}
+
+	return success; 
 }
 
 /* 
@@ -335,12 +347,13 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 	int type; 
 
 	switch (expr->kind) {
-		case BINOP:
+		case BINOP: {
 			type_node_t* lhs = type_check_expr(type_env, expr->children.binop.lhs);
 			type_node_t* rhs = type_check_expr(type_env, expr->children.binop.rhs);
 			if (lhs && rhs) {
 				switch (expr->children.binop.op) {
 					case ADD_NODE:
+						// TODO: compare types not pointers
 						if (lhs == rhs && 
 							lhs->arr_count == 0 && 
 							lhs->type != BOOL_T) {
@@ -352,17 +365,19 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case SUB_NODE:
 					case MUL_NODE:
 					case DIV_NODE:
+						// TODO: compare types not pointers
 						if (lhs == rhs && 
-							lhs->.arr_count == 0 && 
-							(lhs->.type == INT_T ||
-							lhs->.type == DOUBLE_T)) {
-								type = lhs->.type;
+							lhs->arr_count == 0 && 
+							(lhs->type == INT_T ||
+							lhs->type == DOUBLE_T)) {
+								type = lhs->type;
 								break; 
 							} else {
 								// TODO: error message 
 							}
 					case EQ_NODE:
 					case NEQ_NODE:
+						// TODO: compare types not pointers 
 						if (lhs == rhs) {
 							type = BOOL_T;
 							break; 
@@ -393,8 +408,9 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					case ASSIGN_NODE: 
 						if (expr->children.binop.lhs->kind == ID_L) {
 							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
-							if (sym && sym->kind == VAR)  {
-								if (sym->type.var_type.var_type == rhs) {
+							if (sym && sym->kind == VAR_SYM)  {
+								// TODO: compare types not pointers 
+								if (sym->type.var_type == rhs) {
 									type = rhs; break; 
 								} else {
 									// TODO: error message 
@@ -411,22 +427,27 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 				// TODO: some sort of error message
 			}
 			break; 
-		case CALL: 
+		}
+		case CALL: {
 			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
-			if (sym && sym->kind == FUNC) {
+			if (sym && sym->kind == FUNC_SYM) {
 				// TODO: type check parameters 
 			} 
 			// TODO: some sort of error message
+			break; 
+		}
 		case INT_L: type = INT_T; 
 		case DOUBLE_L: type = DOUBLE_T;
 		case STR_L: type = STR_T;
-		case ID_L: 
+		case ID_L: {
 			symbol_t* sym = lookup(type_env, expr->children.str_val);
-			if (sym && sym->kind == VAR) { 
-				type = sym->type.var_type.var_type.type; 
-				arr_count =  sym->type.var_type.var_type.arr_count; 
+			if (sym && sym->kind == VAR_SYM) { 
+				type = sym->type.var_type->type;
+				arr_count =  sym->type.var_type->arr_count;
 			}
 			// TODO: some sort of error message
+			break;
+		}
 		case BOOL_L: type = BOOL_T;
 		default: return NULL; 
 	}

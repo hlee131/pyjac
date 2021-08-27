@@ -19,6 +19,7 @@ The first phase of semantic analysis is type checking. The type checker uses a m
 - parser error recovery and handling
 - ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers, skip keyword
 ### Nice to have
+- function overloading
 - overload + with array concatentation
 - overload comparison for strings
 - implicit casts between ints and doubles
