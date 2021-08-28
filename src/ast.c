@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "includes/ast.h"
 #include "includes/list.h"
@@ -177,6 +178,7 @@ Return type: a boolean representing whether type checking
 */ 
 bool do_type_check(list_t* program) {
 	
+	// TODO: error type
 	symtab_t* globals = make_global_symtab(program);
 	bool success = true;
 
@@ -212,7 +214,8 @@ symtab_t* make_global_symtab(list_t* program) {
 		if (func->kind == FUNC) {
 			
 			if (lookup(symtab, func->children.func.identifier->name)) {
-				// TODO: error: function already declared
+				printf("TYPE ERROR: line %d, pos %d: function %s already exists\n",
+					func->line, func->pos, func->children.func.identifier->name); 
 			} else {
 				// get param types 
 				list_t* param_types = init_list();
@@ -263,7 +266,8 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 					success &= type_check_block(type_env, 
 						((if_pair_t*) curr->current_ele)->block);
 				} else {
-					// TODO: error message
+					printf("TYPE ERROR: line %d, pos %d: if condition does not evaluate to a boolean\n",
+							statement->line, statement->pos);
 				}
 			}
 			break; 
@@ -283,13 +287,21 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 						success &= type_check_block(type_env, statement->children.for_tree.block);
 						break; 
 					} else {
-						// TODO: error message 
+						printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
+							statement->line, statement->pos);
 					}
 				} else {
-					// TODO: error message
+					if (!expr_type) {
+						printf("TYPE ERROR: line %d, pos %d: for condition is not an expression\n",
+							statement->line, statement->pos);
+					} else {
+						printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
+							statement->line, statement->pos);
+					}
 				}
 			} else {
-				// TODO: error message 
+				printf("TYPE ERROR: line %d, pos %d: for loop should have variable declaration first\n",
+					statement->line, statement->pos);
 			}
 			break; 
 		case WHILE: {
@@ -299,7 +311,13 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				free(expr_type);
 				success &= type_check_block(type_env, statement->children.while_tree.block);
 			} else {
-				// TODO: error message 
+				if (!expr_type) {
+					printf("TYPE ERROR: line %d, pos %d: while condition is not an expression\n",
+						statement->line, statement->pos);
+				} else {
+					printf("TYPE ERROR: line %d, pos %d: while condition does not evaluate to a boolean\n",
+						statement->line, statement->pos);
+				}
 			}
 		}
 		case FUNC:
@@ -311,7 +329,8 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			/* will be type checked in previous traversal */ break; 
 		case ASSIGN:
 			if (lookup(type_env, statement->children.assign.identifier->name)) {
-				// TODO: error variable already in scope 
+				printf("TYPE ERROR: line %d, pos %d: variable %s redeclared in scope\n",
+					statement->line, statement->pos, statement->children.assign.identifier->name);
 				break; 
 			} else {
 				symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type,
@@ -434,20 +453,25 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					type_node_t* formal = expected_types->current_ele;
 
 					if (!expected_types) {
-						// TODO: error too many params
+						printf("TYPE ERROR: line %d, pos %d: function call has too many parameters\n",
+							expr->line, expr->pos);
 						break; 
 					}
 
 					if (!type_cmp(actual, formal)) {
 						erroneous = 1;
-						// TODO: some error message 
+						char* actual_str = type_str(actual);
+						char* formal_str = type_str(formal);
+						printf("TYPE ERROR: line %d, pos %d: function parameter is expected to be type %s but received type %s\n",
+							expr->line, expr->pos, actual_str, formal_str);
 					}
 
 					expected_types = expected_types->next;
 				}
 
 				if (expected_types) {
-					// TODO: error, too little params
+					printf("TYPE ERROR: line %d, pos %d: function call has too few parameters\n",
+						expr->line, expr->pos);
 				}
 
 				if (!erroneous) {
@@ -455,7 +479,13 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					arr_count = sym->type.func_signature.ret_type->arr_count;
 				} 
 			} else {
-				// TODO: error is not a function
+				if (sym) {
+					printf("TYPE ERROR: line %d, pos %d: %s is not a function\n",
+						expr->line, expr->pos, expr->children.call.func_name);
+				} else {
+					printf("TYPE ERROR: line %d, pos %d: %s does not exist\n",
+						expr->line, expr->pos, expr->children.call.func_name);
+				}
 			}
 			break; 
 		}
@@ -467,8 +497,15 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			if (sym && sym->kind == VAR_SYM) { 
 				type = sym->type.var_type->type;
 				arr_count = sym->type.var_type->arr_count;
+			} else {
+				if (sym) {
+					printf("TYPE ERROR: line %d, pos %d: %s is not a variable\n",
+						expr->line, expr->pos, expr->children.str_val);
+				} else {
+					printf("TYPE ERROR: line %d, pos %d: %s does not exist\n",
+						expr->line, expr->pos, expr->children.str_val);
+				}
 			}
-			// TODO: some sort of error message
 			break;
 		}
 		case BOOL_L: type = BOOL_T; break; 
