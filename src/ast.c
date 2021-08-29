@@ -322,7 +322,8 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 		}
 		case FUNC:
 			// add parameters to new scope 
-			// TODO: disallow nested functions
+			printf("TYPE ERROR: line %d, pos %d: cannot declare function inside block\n",
+				statement->line, statement->pos);
 			break; 
 		case RET:
 			// TODO: check return types 
@@ -369,77 +370,117 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 		case BINOP: {
 			type_node_t* lhs = type_check_expr(type_env, expr->children.binop.lhs);
 			type_node_t* rhs = type_check_expr(type_env, expr->children.binop.rhs);
-			if (lhs && rhs) {
-				switch (expr->children.binop.op) {
-					case ADD_NODE:
-						if (type_cmp(lhs, rhs) && 
-							lhs->arr_count == 0 && 
-							lhs->type != BOOL_T) {
-								type = lhs->type; 
-								break; 
-							} else {
-								// TODO: error message 
-							}
-					case SUB_NODE:
-					case MUL_NODE:
-					case DIV_NODE:
-						if (type_cmp(lhs, rhs) && 
-							lhs->arr_count == 0 && 
-							(lhs->type == INT_T ||
-							lhs->type == DOUBLE_T)) {
-								type = lhs->type;
-								break; 
-							} else {
-								// TODO: error message 
-							}
-					case EQ_NODE:
-					case NEQ_NODE:
-						if (type_cmp(lhs, rhs)) {
-							type = BOOL_T;
+
+			switch (expr->children.binop.op) {
+				case ADD_NODE:
+					if (type_cmp(lhs, rhs) && 
+						lhs->arr_count == 0 && 
+						lhs->type != BOOL_T) {
+							type = lhs->type; 
 							break; 
 						} else {
-							// TODO: error message 
-						}
-					case LT_NODE:
-					case GT_NODE:
-					case LE_NODE:
-					case GE_NODE:
-						if (type_cmp(lhs, rhs) && 
-							lhs->arr_count == 0 &&
-							(lhs->type == INT_T ||
-							lhs->type == DOUBLE_T)) {
-								type = BOOL_T; break; 
+							if (!type_cmp(lhs, rhs)) {
+								printf("TYPE ERROR: line %d, pos %d: can only add identical types\n",
+									expr->line, expr->pos);
+							} else if (lhs->arr_count) {
+								printf("TYPE ERROR: line %d, pos %d: cannot add arrays\n",
+									expr->line, expr->pos);
 							} else {
-								// TODO: error message 
+								printf("TYPE ERROR: line %d, pos %d: cannot add booleans\n",
+									expr->line, expr->pos);
 							}
-					case INDEX_NODE: 
-						if (lhs->arr_count != 0 && 
-							rhs->arr_count == 0 &&
-							rhs->type == INT_T
-						) {
-							type = lhs->type; break; 
-						} else {
-							// TODO: error message 
 						}
-					case ASSIGN_NODE: 
-						if (expr->children.binop.lhs->kind == ID_L) {
-							symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
-							if (sym && sym->kind == VAR_SYM)  {
-								if (type_cmp(sym->type.var_type, rhs)) {
-									type = rhs->type; break; 
-								} else {
-									// TODO: error message 
-								}
+				case SUB_NODE:
+				case MUL_NODE:
+				case DIV_NODE:
+					if (type_cmp(lhs, rhs) && 
+						lhs->arr_count == 0 && 
+						(lhs->type == INT_T ||
+						lhs->type == DOUBLE_T)) {
+							type = lhs->type;
+							break; 
+						} else {
+							if (!type_cmp(lhs, rhs)) {
+								printf("TYPE ERROR: line %d, pos %d: can only use identical types\n",
+									expr->line, expr->pos);
+							} else if (lhs->arr_count) {
+								printf("TYPE ERROR: line %d, pos %d: cannot be an array\n",
+									expr->line, expr->pos);
 							} else {
-								// TODO: error message
+								printf("TYPE ERROR: line %d, pos %d: can only be integer or double\n",
+									expr->line, expr->pos);
+							}
+						}
+				case EQ_NODE:
+				case NEQ_NODE:
+					if (type_cmp(lhs, rhs)) {
+						type = BOOL_T;
+						break; 
+					} else {
+						printf("TYPE ERROR: line %d, pos %d: can only compare identical types\n",
+									expr->line, expr->pos);
+					}
+				case LT_NODE:
+				case GT_NODE:
+				case LE_NODE:
+				case GE_NODE:
+					if (type_cmp(lhs, rhs) && 
+						lhs->arr_count == 0 &&
+						(lhs->type == INT_T ||
+						lhs->type == DOUBLE_T)) {
+							type = BOOL_T; break; 
+						} else {
+							if (!type_cmp(lhs, rhs)) {
+								printf("TYPE ERROR: line %d, pos %d: can only compare identical types\n",
+									expr->line, expr->pos);
+							} else if (!(lhs->type == INT_T || lhs->type == DOUBLE_T)) {
+								printf("TYPE ERROR: line %d, pos %d: can only compare integers or doubles\n",
+									expr->line, expr->pos);
+							}
+						}
+				case INDEX_NODE: 
+					if (lhs->arr_count != 0 && 
+						rhs->arr_count == 0 &&
+						rhs->type == INT_T
+					) { type = lhs->type; break; } else {
+						if (lhs->arr_count == 0) {
+							printf("TYPE ERROR: line %d, pos %d: %s is not an array\n",
+								expr->line, expr->pos, expr->children.binop.lhs->children.str_val);
+						} else if (rhs->arr_count != 0) {
+							printf("TYPE ERROR: line %d, pos %d: index cannot be an array\n",
+								expr->line, expr->pos);
+						} else {
+							printf("TYPE ERROR: line %d, pos %d: index should be an integer\n",
+								expr->line, expr->pos);
+						}
+					}
+				case ASSIGN_NODE: 
+					if (expr->children.binop.lhs->kind == ID_L) {
+						symbol_t* sym = lookup(type_env, expr->children.binop.lhs->children.str_val);
+						if (sym && sym->kind == VAR_SYM)  {
+							if (type_cmp(sym->type.var_type, rhs)) { type = rhs->type; break; }
+							else {
+								char* var_str = type_str(sym->type.var_type);
+								char* actual_str = type_str(rhs);
+								printf("TYPE ERROR: line %d, pos %d: variable %s is of type %s but received type %s\n",
+									expr->line, expr->pos, expr->children.binop.lhs->children.str_val,
+									var_str, actual_str);
+								free(var_str); free(actual_str); 
 							}
 						} else {
-							// TODO: error message
+							if (sym) {
+								printf("TYPE ERROR: line %d, pos %d: %s is not a variable\n",
+									expr->line, expr->pos, expr->children.binop.lhs->children.str_val);
+							} else {
+								printf("TYPE ERROR: line %d, pos %d: %s does not exist in scope\n",
+									expr->line, expr->pos, expr->children.binop.lhs->children.str_val);			
+							}
 						}
+					} else {
+						printf("TYPE ERROR: line %d, pos %d: can only peform assignment on identifiers\n",
+									expr->line, expr->pos, expr->children.binop.lhs->children.str_val);	
+					}
 
-				}
-			} else {
-				// TODO: some sort of error message
 			}
 			break; 
 		}
@@ -449,6 +490,8 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			if (sym && sym->kind == FUNC_SYM) {
 				list_el_t* expected_types = sym->type.func_signature.param_types->head; 
 				foreach(expr->children.call.params, curr) {
+					// TODO: children.call.params consist of expressions 
+					// execute type check expressions on it to get type
 					type_node_t* actual = curr->current_ele;
 					type_node_t* formal = expected_types->current_ele;
 
@@ -463,7 +506,8 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 						char* actual_str = type_str(actual);
 						char* formal_str = type_str(formal);
 						printf("TYPE ERROR: line %d, pos %d: function parameter is expected to be type %s but received type %s\n",
-							expr->line, expr->pos, actual_str, formal_str);
+							expr->line, expr->pos, formal_str, actual_str);
+						free(actual_str); free(formal_str);
 					}
 
 					expected_types = expected_types->next;
