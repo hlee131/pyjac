@@ -57,7 +57,11 @@ struct while_ast {
 
 // structure for types in the ast 
 typedef struct type_node_s {
-	enum { INT_T = 1, STR_T, BOOL_T, DOUBLE_T } type;
+	// ERROR_T is not available to the programmer 
+	// ERROR_T is an internal type used by the compiler to 
+	// detect and report errors in type checking
+	enum { INT_T = 1, STR_T, BOOL_T, DOUBLE_T, ERROR_T } type;
+	
 	// keeps track of arrays if any 
 	// e.g. Arr:Int: array of ints would have type = int and arr_count = 1
 	int arr_count; 

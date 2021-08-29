@@ -36,7 +36,7 @@ void append_head(list_t* list, void* value) {
 	list->length++; 
 }
 
-// TODO: recursively free the tree
+// TODO: convention to free list?
 void free_list(list_t* list) {
 
 	foreach(list, curr) {

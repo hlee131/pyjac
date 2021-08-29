@@ -25,9 +25,9 @@ int main(int argc, char* argv[]) {
 		parse_program(parser);
 		bool types = do_type_check(parser->ast);
 		if (types) {
-			puts("types correct");
-		} else {
 			puts("types incorrect");
+		} else {
+			puts("types correct");
 		}
 		return 0; 
 	} else {
