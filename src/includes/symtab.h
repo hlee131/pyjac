@@ -18,7 +18,7 @@ typedef struct symbol_s {
     union {
         struct {
             struct type_node_s* ret_type;
-            list_t* param_types; 
+            type_list_t param_types; 
         } func_signature; 
         struct type_node_s* var_type; 
     } type; 
@@ -32,7 +32,7 @@ symtab_t* init_symtab();
 symbol_t* lookup(symtab_t* table, char* key);
 void insert(symtab_t* table, symbol_t* symbol); 
 symbol_t* init_var_sym(struct type_node_s* type, char* name, int sid);
-symbol_t* init_func_sym(struct type_node_s* ret_type, list_t* param_types, char* name, int sid);
+symbol_t* init_func_sym(struct type_node_s* ret_type, type_list_t param_types, char* name, int sid);
 int get_index(char* key);
 void exit_scope(symtab_t* table);
 #endif

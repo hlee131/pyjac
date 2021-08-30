@@ -21,7 +21,7 @@ symbol_t* init_var_sym(type_node_t* type, char* name, int sid) {
     return sym; 
 }
 
-symbol_t* init_func_sym(type_node_t* ret_type, list_t* param_types, char* name, int sid) {
+symbol_t* init_func_sym(type_node_t* ret_type, type_list_t param_types, char* name, int sid) {
     symbol_t* sym = checked_malloc(sizeof(symbol_t));
     sym->kind = FUNC_SYM;
     sym->identifier = name;

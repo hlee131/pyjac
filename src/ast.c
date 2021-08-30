@@ -47,7 +47,7 @@ expr_ast_t* bool_node(int val, int line, int pos) {
 	return node; 
 }
 
-expr_ast_t* call_ast(char* func, list_t* params, int line, int pos) {
+expr_ast_t* call_ast(char* func, expr_list_t params, int line, int pos) {
 	expr_ast_t* ast = checked_malloc(sizeof(expr_ast_t));
 	ast->line = line;
 	ast->pos = pos;
@@ -70,16 +70,16 @@ expr_ast_t* binop_ast(int op, expr_ast_t* lhs, expr_ast_t* rhs, int line, int po
 }
 
 // constructors for statements
-state_ast_t* if_ast(list_t* if_pairs, int line, int pos) { 
+state_ast_t* if_ast(if_ast_t if_pairs, int line, int pos) { 
 	state_ast_t* ast = checked_malloc(sizeof(state_ast_t));
 	ast->kind = IF;
 	ast->line = line; 
 	ast->pos = pos;
-	ast->children.if_tree.if_pairs = if_pairs; 
+	ast->children.if_tree = if_pairs; 
 	return ast; 
 }
 
-state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updater, list_t* block, int line, int pos) {
+state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updater, block_ast_t block, int line, int pos) {
 	state_ast_t* ast = checked_malloc(sizeof(state_ast_t)); 
 	ast->line = line;
 	ast->pos = pos;
@@ -93,7 +93,7 @@ state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t
 	return ast; 
 }
 
-state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos) {
+state_ast_t* while_ast(expr_ast_t* condition, block_ast_t block, int line, int pos) {
 	state_ast_t* ast = checked_malloc(sizeof(state_ast_t)); 
 	ast->children.while_tree = (struct while_ast) {
 		.condition = condition,
@@ -105,7 +105,7 @@ state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos) 
 	return ast; 
 }
 
-state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos) {
+state_ast_t* func_ast(id_ast_t* identifier, params_ast_t params, block_ast_t block, int line, int pos) {
 	state_ast_t* ast = checked_malloc(sizeof(state_ast_t));
 	ast->children.func = (struct func_ast) {
 		.identifier = identifier,
@@ -149,7 +149,7 @@ state_ast_t* expr_ast(expr_ast_t* expr, int line, int pos) {
 }
 
 // misc ast nodes and trees
-if_pair_t* if_pair(expr_ast_t* condition, list_t* block) {
+if_pair_t* if_pair(expr_ast_t* condition, block_ast_t block) {
 	if_pair_t* pair = checked_malloc(sizeof(if_pair_t)); 
 	pair->condition = condition;
 	pair->block = block; 
@@ -176,7 +176,7 @@ Purpose: the driver function to type check ast
 Return type: a boolean representing whether type checking 
 	failed. (similar to os status codes, i.e. 0 for success, 1 for error)
 */ 
-bool do_type_check(list_t* program) {
+bool do_type_check(prog_ast_t program) {
 	
 	symtab_t* globals = make_global_symtab(program);
 	bool failed = false;
@@ -203,7 +203,7 @@ Purpose: generates a symbol table containing all top-level members
 	In the future, it may be expanded to variables and such. 
 Return type: a populated symbol table 
 */
-symtab_t* make_global_symtab(list_t* program) {
+symtab_t* make_global_symtab(prog_ast_t program) {
 	
 	symtab_t* symtab = init_symtab();
 
@@ -216,7 +216,7 @@ symtab_t* make_global_symtab(list_t* program) {
 					func->line, func->pos, func->children.func.identifier->name); 
 			} else {
 				// get param types 
-				list_t* param_types = init_list();
+				type_list_t param_types = init_list();
 				foreach(func->children.func.params, param) {
 					append(param_types, ((id_ast_t*) ((list_el_t*) param)->current_ele)->id_type);
 				}	
@@ -235,7 +235,7 @@ Purpose: type checks a block of statements, is responsible for
 Return type: a boolean representing whether type checking 
 	failed. (similar to os status codes, i.e. 0 for success, 1 for error)
 */
-bool type_check_block(symtab_t* type_env, list_t* block) {
+bool type_check_block(symtab_t* type_env, block_ast_t block) {
 	bool failed = false; 
 	enter_scope(type_env);
 
@@ -256,7 +256,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 	bool failed = false; 
 	switch (statement->kind) {
 		case IF: 
-			foreach(statement->children.if_tree.if_pairs, curr) {
+			foreach(statement->children.if_tree, curr) {
 				type_node_t* expr_type = type_check_expr(type_env, 
 					((if_pair_t*) curr->current_ele)->condition);
 				if (expr_type->type == ERROR_T) { free(expr_type); failed |= true; }
@@ -528,7 +528,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
 			if (sym && sym->kind == FUNC_SYM) {
 				list_el_t* expected_types = sym->type.func_signature.param_types->head; 
-				list_t* param_types = init_list();
+				type_list_t param_types = init_list();
 
 				foreach(expr->children.call.params, param) { 
 					type_node_t* param_type = type_check_expr(type_env, param->current_ele);

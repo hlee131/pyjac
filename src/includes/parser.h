@@ -9,7 +9,7 @@
 
 typedef struct parser_s {
 	token_stream_t* token_stream; 
-	list_t* ast; 
+	prog_ast_t ast; 
 } parser_t;
 
 parser_t* init_parser(char* src);
@@ -18,7 +18,7 @@ void parse_program(parser_t* p);
 type_node_t* parse_types(token_stream_t* ts);
 list_t* parse_params(token_stream_t* ts, bool is_formal_params); 
 state_ast_t* parse_function(token_stream_t* ts); 
-list_t* parse_block(token_stream_t* ts); 
+block_ast_t parse_block(token_stream_t* ts); 
 state_ast_t* parse_statement(token_stream_t* ts);
 state_ast_t* parse_ret(token_stream_t* ts);
 state_ast_t* parse_expr_state(token_stream_t* ts);

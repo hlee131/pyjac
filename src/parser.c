@@ -104,20 +104,20 @@ state_ast_t* parse_function(token_stream_t* ts) {
 	expect(FUNC_TOK, ts); 
 	type_node_t* type = parse_types(ts); 
 	expect(L_PAREN_TOK, ts);
-	list_t* params = parse_params(ts, true); 
+	params_ast_t params = parse_params(ts, true); 
 	expect(R_PAREN_TOK, ts); 
 	expect(ARROW_TOK, ts); 
 	
 	id_ast_t* func_type = id_ast(curr(ts).tok_val, type); 	
 	adv(ts); expect(COLON_TOK, ts);
-	list_t* content = parse_block(ts); 
+	block_ast_t content = parse_block(ts); 
 	
 	return func_ast(func_type, params, content, line, pos); 
 }
 
 // valid statement is also an expression + end_tok
-list_t* parse_block(token_stream_t* ts) {
-	list_t* statements = init_list(); 
+block_ast_t parse_block(token_stream_t* ts) {
+	block_ast_t statements = init_list(); 
 	expect(INDENT_TOK, ts);
 	while (curr(ts).tok_type != DEDENT_TOK) {
 		append(statements, parse_statement(ts));
@@ -167,7 +167,7 @@ state_ast_t* parse_ret(token_stream_t* ts) {
 
 
 state_ast_t* parse_if(token_stream_t* ts) {
-	list_t* if_pairs = init_list(); 
+	if_ast_t if_pairs = init_list(); 
 	int line = curr(ts).line;
 	int pos = curr(ts).pos; 
 	expect(IF_TOK, ts);
@@ -176,7 +176,7 @@ state_ast_t* parse_if(token_stream_t* ts) {
 	expr_ast_t* condition = parse_expression(ts, 0); 
 	expect(R_PAREN_TOK, ts); 
 	expect(COLON_TOK, ts); 
-	list_t* block = parse_block(ts);
+	block_ast_t block = parse_block(ts);
 	append(if_pairs, if_pair(condition, block)); 
 
 	while (curr(ts).tok_type == ELIF_TOK) {
@@ -185,7 +185,7 @@ state_ast_t* parse_if(token_stream_t* ts) {
 		expr_ast_t* condition = parse_expression(ts, 0); 
 		expect(R_PAREN_TOK, ts); 
 		expect(COLON_TOK, ts); 
-		list_t* block = parse_block(ts);
+		block_ast_t block = parse_block(ts);
 		append(if_pairs, if_pair(condition, block));
 	}
 
@@ -193,7 +193,7 @@ state_ast_t* parse_if(token_stream_t* ts) {
 		expr_ast_t* condition = bool_node(1, curr(ts).line, curr(ts).pos); 
 		adv(ts);
 		expect(COLON_TOK, ts); 
-		list_t* block = parse_block(ts); 
+		block_ast_t block = parse_block(ts); 
 		append(if_pairs, if_pair(condition, block)); 
 	}	
 
@@ -209,7 +209,7 @@ state_ast_t* parse_while(token_stream_t* ts) {
 	expr_ast_t* condition = parse_expression(ts, 0); 
 	expect(R_PAREN_TOK, ts); 
 	expect(COLON_TOK, ts);
-	list_t* block = parse_block(ts);
+	block_ast_t block = parse_block(ts);
 	return while_ast(condition, block, line, pos); 
 }
 
@@ -226,7 +226,7 @@ state_ast_t* parse_for(token_stream_t* ts) {
 	expr_ast_t* updater = parse_expression(ts, 0);
 	expect(R_PAREN_TOK, ts);
 	expect(COLON_TOK, ts);
-	list_t* block = parse_block(ts); 
+	block_ast_t block = parse_block(ts); 
 	return for_ast(initializer, condition, updater, block, line, pos);
 }
 

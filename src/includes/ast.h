@@ -4,12 +4,18 @@
 #include "list.h" 
 #include "symtab.h"
 
+#define type_cmp(t1, t2) ((t1->arr_count == t2->arr_count) && (t1->type == t2->type))
+
 typedef struct expr_ast_s expr_ast_t; 
 typedef struct state_ast_s state_ast_t; 
 typedef struct id_ast_s id_ast_t; 
-typedef struct type_node_s type_node_t; 
 
-#define type_cmp(t1, t2) ((t1->arr_count == t2->arr_count) && (t1->type == t2->type))
+typedef list_t* block_ast_t; 	// list of statement ast
+typedef list_t* params_ast_t;	// list of id_ast 
+typedef list_t* if_ast_t; 		// list of if pairs	 
+typedef list_t* prog_ast_t; 	// list of function ast 
+typedef list_t* type_list_t; 	// list of types 
+typedef list_t* expr_list_t; 	// list of expressions ast
 
 // ast for binary operations, i.e. +, -, ...
 struct binop_ast {
@@ -30,15 +36,15 @@ struct decl_ast {
 
 // ast for if statements
 // block contains the code inside the statement
-struct if_ast {
-	list_t* if_pairs; 
-};
+// struct if_ast {
+// 	list_t* if_pairs; 
+// };
 
 // pairs a condition to a block of code
 // represents if, elif, and else 
 typedef struct if_pair_s {
 	expr_ast_t* condition;
-	list_t* block; 
+	block_ast_t block; 
 } if_pair_t; 
 
 // ast for for loops 
@@ -46,13 +52,13 @@ struct for_ast {
 	state_ast_t* initializer;
 	expr_ast_t* condition;
 	expr_ast_t* updater;
-	list_t* block; 
+	block_ast_t block; 
 };
 
 // ast for while loops
 struct while_ast {
 	expr_ast_t* condition;
-	list_t* block; 
+	block_ast_t block; 
 };
 
 // structure for types in the ast 
@@ -79,15 +85,15 @@ typedef struct id_ast_s {
 struct func_ast {
 	id_ast_t* identifier; 
 	// params will be list of id_ast 
-	list_t* params; 
-	list_t* block; 
+	params_ast_t params; 
+	block_ast_t block; 
 };
 
 
 // used when a function is called
 struct call_ast {
 	char* func_name;
-	list_t* params; 
+	expr_list_t params; 
 }; 
 
 // used for return statements
@@ -119,7 +125,7 @@ typedef struct state_ast_s {
 	int pos;
 
 	union {
-		struct if_ast if_tree;
+		if_ast_t if_tree;
 		struct for_ast for_tree;
 		struct while_ast while_tree;
 		struct func_ast func;
@@ -136,23 +142,23 @@ expr_ast_t* str_node(char* value, int line, int pos);
 expr_ast_t* double_node(double val, int line, int pos); 
 expr_ast_t* id_node(char* value, int line, int pos);
 expr_ast_t* bool_node(int val, int line, int pos);
-expr_ast_t* call_ast(char* func, list_t* params, int line, int pos); 
+expr_ast_t* call_ast(char* func, expr_list_t params, int line, int pos); 
 expr_ast_t* binop_ast(int op, expr_ast_t* lhs, expr_ast_t* rhs, int line, int pos);
-state_ast_t* if_ast(list_t* if_pairs, int line, int pos);
-state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updated, list_t* block, int line, int pos);
-state_ast_t* while_ast(expr_ast_t* condition, list_t* block, int line, int pos);
-state_ast_t* func_ast(id_ast_t* identifier, list_t* params, list_t* block, int line, int pos); 
+state_ast_t* if_ast(if_ast_t if_pairs, int line, int pos);
+state_ast_t* for_ast(state_ast_t* initializer, expr_ast_t* condition, expr_ast_t* updated, block_ast_t block, int line, int pos);
+state_ast_t* while_ast(expr_ast_t* condition, block_ast_t block, int line, int pos);
+state_ast_t* func_ast(id_ast_t* identifier, params_ast_t params, block_ast_t block, int line, int pos); 
 state_ast_t* ret_ast(expr_ast_t* expr, int line, int pos);
 state_ast_t* decl_ast(id_ast_t* id, expr_ast_t* val, int line, int pos);
 state_ast_t* expr_ast(expr_ast_t* expr, int line, int pos);
-if_pair_t* if_pair(expr_ast_t* condition, list_t* block); 
+if_pair_t* if_pair(expr_ast_t* condition, block_ast_t block); 
 type_node_t* type_node(int type, int arr_count);
 id_ast_t* id_ast(char* name, type_node_t* id_type); 
 
 // semantic analysis methods
-bool do_type_check(list_t* program); 
-struct symtab_s* make_global_symtab(list_t* program);
-bool type_check_block(struct symtab_s* type_env, list_t* block);
+bool do_type_check(prog_ast_t program); 
+struct symtab_s* make_global_symtab(prog_ast_t program);
+bool type_check_block(struct symtab_s* type_env, block_ast_t block);
 bool type_check_state(struct symtab_s* type_env, state_ast_t* statement);
 type_node_t* type_check_expr(struct symtab_s* type_env, expr_ast_t* expr);
 
