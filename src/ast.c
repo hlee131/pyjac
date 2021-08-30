@@ -178,7 +178,6 @@ Return type: a boolean representing whether type checking
 */ 
 bool do_type_check(list_t* program) {
 	
-	// TODO: error type
 	symtab_t* globals = make_global_symtab(program);
 	bool failed = false;
 
@@ -260,64 +259,69 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			foreach(statement->children.if_tree.if_pairs, curr) {
 				type_node_t* expr_type = type_check_expr(type_env, 
 					((if_pair_t*) curr->current_ele)->condition);
-				if (expr_type->type == ERROR_T) {
-					free(expr_type); failed |= true; 
-				} else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) {
-					free(expr_type);
-					failed |= type_check_block(type_env, 
-						((if_pair_t*) curr->current_ele)->block);
-				} else {
+				if (expr_type->type == ERROR_T) { free(expr_type); failed |= true; }
+				else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) free(expr_type); 
+				else {
 					printf("TYPE ERROR: line %d, pos %d: if condition does not evaluate to a boolean\n",
 							statement->line, statement->pos);
 					failed |= true; 
 				}
+
+				failed |= type_check_block(type_env, 
+						((if_pair_t*) curr->current_ele)->block);
 			}
 			break; 
 		case FOR:
 			if (statement->children.for_tree.initializer->kind == ASSIGN) {
-				type_node_t* expr_type = type_check_expr(type_env, 
-					statement->children.for_tree.condition);
-				if (expr_type->type == ERROR_T) {
-					free(expr_type); failed |= true; 
-				} else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) {
-					free(expr_type);
-					// TODO: only specific binary operations? 
-					if (statement->children.for_tree.updater->kind == BINOP) {
-						symbol_t* sym = init_var_sym( 
-							statement->children.for_tree.initializer->children.assign.identifier->id_type,
-							statement->children.for_tree.initializer->children.assign.identifier->name,
-							type_env->curr_sid + 1);
-						insert(type_env, sym);
-						failed |= type_check_block(type_env, statement->children.for_tree.block);
-						break; 
+				// TODO: who should insert into symbol table?
+				// insert new variable into symbol table regardless of type checker result
+				// to prevent cascading errors
+				symbol_t* sym = init_var_sym( 
+					statement->children.for_tree.initializer->children.assign.identifier->id_type,
+					statement->children.for_tree.initializer->children.assign.identifier->name,
+					type_env->curr_sid + 1);
+				insert(type_env, sym);
+
+				if (!type_check_state(type_env, statement->children.for_tree.initializer)){
+
+					// type check loop condition 
+					type_node_t* expr_type = type_check_expr(type_env, 
+						statement->children.for_tree.condition);
+					if (expr_type->type == ERROR_T) {
+						free(expr_type); failed |= true; 
+					
+					// verify loop condition is a boolean 
+					} else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) {
+						free(expr_type);
+						if (statement->children.for_tree.updater->kind != BINOP) {
+							printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
+								statement->line, statement->pos); failed |= true; 
+						} 
 					} else {
-						printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
-							statement->line, statement->pos); failed |= true; 
+						if (!expr_type) {
+							printf("TYPE ERROR: line %d, pos %d: for condition is not an expression\n",
+								statement->line, statement->pos);
+						} else {
+							printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
+								statement->line, statement->pos);
+						}
+						failed |= true; 
 					}
-				} else {
-					if (!expr_type) {
-						printf("TYPE ERROR: line %d, pos %d: for condition is not an expression\n",
-							statement->line, statement->pos);
-					} else {
-						printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
-							statement->line, statement->pos);
-					}
-					failed |= true; 
-				}
+				} else failed |= true; 
+
 			} else {
 				printf("TYPE ERROR: line %d, pos %d: for loop should have variable declaration first\n",
 					statement->line, statement->pos); failed |= true; 
 			}
+
+			failed |= type_check_block(type_env, statement->children.for_tree.block);
 			break; 
 		case WHILE: {
 			type_node_t* expr_type = type_check_expr(type_env, 
 				statement->children.while_tree.condition);
-			if (expr_type->type == ERROR_T) {
-				free(expr_type); failed |= true; 
-			} else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) {
-				free(expr_type);
-				failed |= type_check_block(type_env, statement->children.while_tree.block);
-			} else {
+			if (expr_type->type == ERROR_T) { free(expr_type); failed |= true; }
+			else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) free(expr_type);
+			else {
 				if (!expr_type) {
 					printf("TYPE ERROR: line %d, pos %d: while condition is not an expression\n",
 						statement->line, statement->pos);
@@ -327,6 +331,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				}
 				failed |= true; 
 			}
+			failed |= type_check_block(type_env, statement->children.while_tree.block);
 			break; 
 		}
 		case FUNC:
@@ -345,9 +350,24 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				failed |= true; 
 				break; 
 			} else {
-				symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type,
-					statement->children.assign.identifier->name, type_env->curr_sid);
+				// insert into symbol table anyways to prevent cascading errors
+				symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type, 
+					statement->children.assign.identifier->name, 
+					type_env->curr_sid);
 				insert(type_env, sym);
+
+				type_node_t* rval_type = type_check_expr(type_env, statement->children.assign.value);
+				if (rval_type->type == ERROR_T) {
+					free(rval_type); failed |= true; 
+				} else if (!type_cmp(rval_type, statement->children.assign.identifier->id_type)) {
+					char* rval_str = type_str(rval_type);
+					char* expected_str = type_str(statement->children.assign.identifier->id_type);
+					printf("TYPE ERROR: line %d, pos %d: cannot assign expression of type %s to variable of type %s\n",
+						statement->line, statement->pos, rval_str, expected_str);
+					free(rval_str); free(expected_str); 
+					failed |= true; 
+				}
+
 				break; 
 			}
 		case EXPR: {

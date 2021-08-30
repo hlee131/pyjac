@@ -1,5 +1,26 @@
 [ Function headers? ]
 func Int: (Int: argc, Arr:Str: argv) => main:
-	if (argc == 0):
+	test(5)
+	if (argc == 2):
 		while (argc != 5):
 			argc = argc + 1
+
+func Int: (Int: start, Int: end) => sum_nums:
+	var Int: sum = 0
+	for (var Int: i = 1.2 | i <= end | i = i + 1):
+		sum = sum + i 
+
+	ret sum 
+
+func Int: (Int: num) => facorial:
+	var Int: total = 1
+	1 + 2
+	while (num > 1):
+		total = total * num
+		num = num - 1
+
+	ret total 
+
+
+func Str: (Int: length) => test:
+	ret "Hi" 
