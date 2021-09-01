@@ -2,7 +2,6 @@
 #define AST_H
 #include <stdbool.h>
 #include "list.h" 
-#include "symtab.h"
 
 #define type_cmp(t1, t2) ((t1->arr_count == t2->arr_count) && (t1->type == t2->type))
 
