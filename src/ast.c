@@ -190,6 +190,7 @@ bool do_type_check(prog_ast_t program) {
 			insert(globals, sym);
 		}
 
+		globals->expected_type = function->children.func.identifier->id_type;
 		failed |= type_check_block(globals, function->children.func.block);
 	}
 
@@ -340,9 +341,20 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				statement->line, statement->pos);
 			failed |= true; 
 			break; 
-		case RET:
-			// TODO: check return types 
-			/* will be type checked in previous traversal */ break; 
+		case RET: {
+			type_node_t* ret_type = type_check_expr(type_env, statement->children.ret.expression);
+			if (ret_type->type == ERROR_T) { failed |= true; }
+			else if (!type_cmp(ret_type, type_env->expected_type)) {
+				char* expected = type_str(type_env->expected_type); 
+				char* actual = type_str(ret_type); 
+				printf("TYPE ERROR: line %d, pos %d: expected return type %s but got type %s\n", 
+					statement->line, statement->pos, expected, actual);
+				free(expected); free(actual); 
+				failed |= true; 
+			}
+			free(ret_type); 
+			break; 
+		}
 		case ASSIGN:
 			if (lookup(type_env, statement->children.assign.identifier->name)) {
 				printf("TYPE ERROR: line %d, pos %d: variable %s redeclared in scope\n",

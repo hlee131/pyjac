@@ -2,6 +2,7 @@
 #define SYMTAB_H
 #include "list.h"
 #include "ast.h"
+#include "parser.h"
 
 #define BUCKET_COUNT 13
 #define enter_scope(symtab) (symtab->curr_sid++)
@@ -9,6 +10,7 @@
 typedef struct symtab_s {
     list_t* stacks[BUCKET_COUNT]; 
     int curr_sid; 
+    type_node_t* expected_type; 
 } symtab_t; 
 
 typedef struct symbol_s {
