@@ -14,8 +14,11 @@ The parser is a simple LL(1) predictive parser (recursive descent with no backtr
 ## Type checking
 The first phase of semantic analysis is type checking. The type checker uses a multi-pass traversal of the tree in order to allow features such as out of order functions. In the first pass, the type checker collects all global members, i.e. functions, and inserts global symbols into a symbol table (implemented as a hash table) that will act as the "base" symbol table. In the second pass, the type checker uses the global symbol table to check each individual statement and expression, inserting and removing symbols where necessary. 
 
-## Type Checking Error Recovery and Handling
+### Type Checking Error Recovery and Handling
 In the type checker, error handling is implemented with a `error` subtype. This `error` subtype allows all operations to succeed with the return type of `error`. Using an `error` subtype prevents cascading or compounding type errors within the compiler. Moreover, an `error` subtype allows the type checker to continue checking other unrelated statements and expressions. 
+
+## Intermediate Code 
+After type checking, intermediate code is generated. In pyjac, intermediate code is a form of three address code, i.e. TAC or 3AC, with the constraints of single static assignment, i.e. SSA. In terms of implementation, intermediate code is implemented as indirect triples. 
 
 ## Future improvements
 ### Priority 

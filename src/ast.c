@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "includes/ast.h"
 #include "includes/list.h"
@@ -207,6 +208,7 @@ Return type: a populated symbol table
 symtab_t* make_global_symtab(prog_ast_t program) {
 	
 	symtab_t* symtab = init_symtab();
+	bool main_present = false; 
 
 	foreach(program, curr) {
 		state_ast_t* func = (state_ast_t*) (curr->current_ele); 
@@ -224,9 +226,16 @@ symtab_t* make_global_symtab(prog_ast_t program) {
 				symbol_t* func_sym = init_func_sym(func->children.func.identifier->id_type,
 					param_types, func->children.func.identifier->name, 0);
 				insert(symtab, func_sym);
+
+				if (strcmp(func->children.func.identifier->name, "main") == 0) main_present = true; 
 			}
 		}
 	}
+
+	if (!main_present) {
+		puts("ERROR: main function is required but not found"); 
+	}
+
 	return symtab; 
 }
 
