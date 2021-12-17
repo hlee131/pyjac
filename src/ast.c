@@ -283,15 +283,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			break; 
 		case FOR:
 			if (statement->children.for_tree.initializer->kind == ASSIGN) {
-				// TODO: who should insert into symbol table?
-				// insert new variable into symbol table regardless of type checker result
-				// to prevent cascading errors
-				symbol_t* sym = init_var_sym( 
-					statement->children.for_tree.initializer->children.assign.identifier->id_type,
-					statement->children.for_tree.initializer->children.assign.identifier->name,
-					type_env->curr_sid + 1);
-				insert(type_env, sym);
-
+				// type check state also adds to symbol table since symbol table is passed by pointer 
 				if (!type_check_state(type_env, statement->children.for_tree.initializer)){
 
 					// type check loop condition 

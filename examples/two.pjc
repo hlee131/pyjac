@@ -7,7 +7,7 @@ func Int: (Int: argc, Arr:Str: argv) => main:
 
 func Int: (Int: start, Int: end) => sum_nums:
 	var Int: sum = 0
-	for (var Int: i = 1.2 | i <= end | i = i + 1):
+	for (var Int: i = start | i <= end | i = i + 1):
 		sum = sum + i 
 
 	ret sum 
