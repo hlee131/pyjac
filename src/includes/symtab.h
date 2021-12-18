@@ -1,5 +1,7 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
+#include <llvm-c/Core.h>
+
 #include "list.h"
 #include "ast.h"
 #include "parser.h"
@@ -23,6 +25,7 @@ typedef struct symbol_s {
             type_list_t param_types; 
         } func_signature; 
         struct type_node_s* var_type; 
+        LLVMValueRef val_ref; 
     } type; 
 
     char* identifier; 

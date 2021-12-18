@@ -1,10 +1,14 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 
+#include <llvm-c/Analysis.h> 
+#include <llvm-c/ExecutionEngine.h>
+
 #include "includes/parser.h"
 #include "includes/compiler.h" 
 #include "includes/utils.h"
 #include "includes/symtab.h"
+#include "includes/codegen.h"
 
 int main(int argc, char* argv[]) {
 	
@@ -29,12 +33,45 @@ int main(int argc, char* argv[]) {
 		} else {
 			puts("types correct");
 		}
+		
+		// jit driver 
+		// generate code and get reference to entry point, i.e. main function 
+		char* error = NULL;
+		LLVMModuleRef app = generate_module(parser->ast); 
+		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main"); 
+		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
+		LLVMDisposeMessage(error); 
+
+		// create the execution engine 
+		LLVMExecutionEngineRef engine; 
+		error = NULL;
+		LLVMLinkInMCJIT();
+		LLVMInitializeNativeTarget(); 
+		if (LLVMCreateExecutionEngineForModule(&engine, app, &error) != 0) {
+			printf("cannot create execution engine, aborting ... \n");
+			abort(); 
+		}
+		if (error) {
+			printf("error: %s", error);
+			LLVMDisposeMessage(error);
+			exit(EXIT_FAILURE); 
+		}
+
+		// call main function 
+		LLVMGenericValueRef args[] = {
+			LLVMCreateGenericValueOfInt(LLVMInt32Type(), argc, 0),
+			LLVMCreateGenericValueOfPointer(LLVMArrayType(LLVMInt8Type(), argc))
+		}; 
+
+		LLVMGenericValueRef output = LLVMRunFunction(engine, entry_point, 2, args); 
+
 		return 0; 
 	} else {
 		puts("error: invalid file name");
 		return 1; 
 	}
 }
+
 
 char* read_file(char* file_name) {
 	FILE* source = fopen(file_name, "r");

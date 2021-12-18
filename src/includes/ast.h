@@ -96,6 +96,7 @@ struct call_ast {
 }; 
 
 // used for return statements
+// TODO: allow return nothing 
 struct ret_ast {
 	expr_ast_t* expression; 
 }; 
