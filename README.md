@@ -24,6 +24,7 @@ After type checking, LLVM IR is generated using the AST. LLVM IR allows for furt
 ### Priority 
 - parser error recovery and handling
 - ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers, skip keyword
+- tabs can be spaces or tabs 
 ### Nice to have
 - function overloading
 - overload + with array concatentation

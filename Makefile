@@ -1,10 +1,6 @@
-GCC=gcc
-
+# build objects with c compiler and link with c++ compiler since llvm is a c++ project with c wrappers 
 all:
-	$(GCC) -Wall -std=c99 src/compiler.c src/lexer.c src/ast.c src/parser.c src/list.c src/utils.c src/symtab.c
-
-debug:
-	$(GCC) -Wall -g src/compiler.c src/lexer.c src/ast.c src/parser.c src/list.c src/utils.c src/symtab.c -o debug.out
+	./build/build.sh
 
 clean:
-	rm -f a.out debug.out
+	rm -f a.out debug.out && rm -f build/*.o

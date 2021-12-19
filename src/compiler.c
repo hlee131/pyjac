@@ -3,6 +3,7 @@
 
 #include <llvm-c/Analysis.h> 
 #include <llvm-c/ExecutionEngine.h>
+#include <llvm-c/BitWriter.h> 
 
 #include "includes/parser.h"
 #include "includes/compiler.h" 
@@ -38,9 +39,11 @@ int main(int argc, char* argv[]) {
 		// generate code and get reference to entry point, i.e. main function 
 		char* error = NULL;
 		LLVMModuleRef app = generate_module(parser->ast); 
-		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main"); 
 		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
+		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main");
 		LLVMDisposeMessage(error); 
+
+		LLVMWriteBitcodeToFile(app, "pcc.bc"); 
 
 		// create the execution engine 
 		LLVMExecutionEngineRef engine; 

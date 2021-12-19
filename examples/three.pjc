@@ -1,12 +1,12 @@
-func Int: (Int: argc, Arr:Str: argv):
-    var Int: changeMe = 5
+func Int: (Int: argc, Arr:Str: argv) => main:
+	var Int: changeMe = 5
     
-    if (5 > 6):
-        changeMe = 4 
-    elif (6 == 7):
-        changeMe = 3
-    else:
-        changeMe = 2 
+	if (5 > 6):
+		changeMe = 4 
+	elif (6 == 7):
+		changeMe = 3
+	else:
+		changeMe = 2 
 
-    var Int: six = 6
-    return five * six 
+	var Int: six = 6
+	return five * six
