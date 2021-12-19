@@ -85,8 +85,8 @@ LLVMBasicBlockRef generate_bb(LLVMBuilderRef builder, block_ast_t block, symtab_
 LLVMValueRef generate_expr(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* ref_table) {
     switch (expr->kind) {
         case BINOP:
-            generate_binop(builder, &(expr->children.binop)); 
-            break; 
+            return generate_binop(builder, expr, ref_table); 
+        // TODO: implement function call 
         case CALL:
         case INT_L:
         case BOOL_L: 
@@ -101,32 +101,59 @@ LLVMValueRef generate_expr(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* r
     }
 }
 
-LLVMValueRef generate_binop(LLVMBuilderRef builder, struct binop_ast* binop) {
-    switch (binop->op) {
+// TODO: make cleaner with arrays? 
+LLVMValueRef generate_binop(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* ref_table) {
+    LLVMValueRef lhs = generate_expr(builder, expr->children.binop.lhs, ref_table);
+    LLVMValueRef rhs = generate_expr(builder, expr->children.binop.rhs, ref_table);
+    switch (expr->children.binop.op) {
         case ADD_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildAdd(builder, lhs, rhs, "int_add"); 
+            else return LLVMBuildFAdd(builder, lhs, rhs, "double_add"); 
         case SUB_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildSub(builder, lhs, rhs, "int_sub");
+            else return LLVMBuildFSub(builder, lhs, rhs, "double_sub"); 
         case MUL_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildMul(builder, lhs, rhs, "int_mul");
+            else return LLVMBuildFMUl(builder, lhs, rhs, "double_mul"); 
         case DIV_NODE:
+            // TODO: once negatives are supported, check if int is signed 
+            if (expr->expr_type == INT_T) return LLVMBuildUDiv(builder, lhs, rhs, "int_div");
+            else return LLVMBuildExactUDiv(builder, lhs, rhs, "double_div"); 
         case EQ_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntEQ, lhs, rhs, "int_eq"); 
+            else return LLVMBuildFCmp(builder, LLVMRealUEQ, lhs, rhs, "double_eq"); 
         case NEQ_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntNE, lhs, rhs, "int_neq"); 
+            else return LLVMBuildFCmp(builder, LLVMRealUNE, lhs, rhs, "double_neq");
         case LT_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntULT, lhs, rhs, "int_lt"); 
+            else return LLVMBuildFCmp(builder, LLVMRealULT, lhs, rhs, "double_lt");
         case GT_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntUGT, lhs, rhs, "int_gt"); 
+            else return LLVMBuildFCmp(builder, LLVMRealUGT, lhs, rhs, "double_gt");
         case LE_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntULE, lhs, rhs, "int_le"); 
+            else return LLVMBuildFCmp(builder, LLVMRealULE, lhs, rhs, "double_le");
         case GE_NODE:
+            if (expr->expr_type == INT_T) return LLVMBuildICmp(builder, LLVMIntUGE, lhs, rhs, "int_ge"); 
+            else return LLVMBuildFCmp(builder, LLVMRealUGE, lhs, rhs, "double_ge");
         case INDEX_NODE:
         case ASSIGN_NODE: 
-
+            return LLVMBuildStore(builder, rhs, lookup(ref_table, expr->children.str_val)->type.val_ref); 
     }
 }
 
 // write comparisons, loop constructs, etc. to module 
 void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table) {
+    // TODO: implement control flow structures 
     switch (state->kind) {
         case IF:
             // store current if and else block 
             foreach (state->children.if_tree, curr) {
                 if_pair_t* pair = curr->current_ele; 
-                //    
+                LLVMValueRef condition = generate_expr(builder, pair->condition, ref_table);
+                LLVMBasicBlockRef then = generate_bb(builder, pair->block, ref_table); 
+                LLVMBasicBlockRef els = 
             }
         case FOR:
         case WHILE:
@@ -144,6 +171,7 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
             insert_LLVM_ref(addr, VAR_SYM, state->children.assign.identifier->name, ref_table); 
             break; 
         case EXPR: 
+            generate_expr(builder, &(state->children.expr), ref_table); 
     }
 }
 
