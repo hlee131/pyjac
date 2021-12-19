@@ -622,5 +622,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 	if (!type) type = ERROR_T; 
 
 	END: 
-	return type_node(type, arr_count);
+		// TODO: use expr_type instead of returned value 
+		expr->expr_type = type_node(type, arr_count); 
+		return expr->expr_type; 
 }

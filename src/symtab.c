@@ -1,4 +1,6 @@
 #include <string.h>
+#include <llvm-c/Core.h>
+
 #include "includes/symtab.h"
 #include "includes/utils.h"
 #include "includes/list.h"
@@ -51,6 +53,16 @@ symbol_t* lookup(symtab_t* table, char* key) {
 
 void insert(symtab_t* table, symbol_t* symbol) {
     int index = get_index(symbol->identifier);
+    append_head(table->stacks[index], symbol); 
+}
+
+void insert_LLVM_ref(LLVMValueRef ref, int type, char* identifier, symtab_t* table) {
+    symbol_t* symbol = checked_malloc(sizeof(symbol_t));
+    symbol->kind = type;
+    symbol->identifier = identifier;
+    symbol->scope_id = table->curr_sid;
+    symbol->type.val_ref = ref;
+    int index = get_index(identifier);
     append_head(table->stacks[index], symbol); 
 }
 

@@ -33,12 +33,6 @@ struct decl_ast {
 	expr_ast_t* value; 
 };
 
-// ast for if statements
-// block contains the code inside the statement
-// struct if_ast {
-// 	list_t* if_pairs; 
-// };
-
 // pairs a condition to a block of code
 // represents if, elif, and else 
 typedef struct if_pair_s {
@@ -115,6 +109,8 @@ typedef struct expr_ast_s {
 		double double_val;
 		char* str_val; 
 	} children; 
+
+	type_node_t* expr_type; 
 
 } expr_ast_t; 
 
