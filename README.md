@@ -15,7 +15,7 @@ The parser is a simple LL(1) predictive parser (recursive descent with no backtr
 The first phase of semantic analysis is type checking. The type checker uses a multi-pass traversal of the tree in order to allow features such as out of order functions. In the first pass, the type checker collects all global members, i.e. functions, and inserts global symbols into a symbol table (implemented as a hash table) that will act as the "base" symbol table. In the second pass, the type checker uses the global symbol table to check each individual statement and expression, inserting and removing symbols where necessary. 
 
 ### Type Checking Error Recovery and Handling
-In the type checker, error handling is implemented with a `error` subtype. This `error` subtype allows all operations to succeed with the return type of `error`. Using an `error` subtype prevents cascading or compounding type errors within the compiler. Moreover, an `error` subtype allows the type checker to continue checking other unrelated statements and expressions. 
+In the type checker, error handling is implemented with a `error` subtype. This `error` subtype allows all operations to succeed with the return type of `error`. Using an `error` subtype prevents cascading or compounding type errors within the compiler. Moreover, an `error` subtype allows the type checker to continue checking other unrelated statements and expressions. Type checking the AST is necessary because while LLVM has types, the types are not enforced. 
 
 ## Intermediate Code 
 After type checking, LLVM IR is generated using the AST. LLVM IR allows for further optimizations. 

@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #define foreach(list, name) for (list_el_t* name = list->head; name; name = name->next)
+#define HAS_NEXT(list_element) (list_element->next != NULL) 
 
 typedef struct list_el_s {
 	void* current_ele;
