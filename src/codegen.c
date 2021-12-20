@@ -185,6 +185,7 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
 				// merge true branch into the merge basic block 
 				// TODO: br not being generated 
 				LLVMPositionBuilderAtEnd(builder, t);
+				printf("inserting br at %s\n", LLVMGetBasicBlockName(LLVMGetInsertBlock(builder))); 
                 LLVMBuildBr(builder, merge_bb); 
             }
             // merge into the next statement by creating an empty basic block the next statement adds to 

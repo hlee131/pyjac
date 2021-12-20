@@ -3,6 +3,6 @@ func Int: () => main:
 	[if (five > 3):
 		five = 3 
 	else:
-		five = 2 ]
+		five = 2] 
 	var Int: six = 6
 	ret five + six

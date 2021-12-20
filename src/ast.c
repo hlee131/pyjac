@@ -267,70 +267,39 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 	switch (statement->kind) {
 		case IF: 
 			foreach(statement->children.if_tree, curr) {
-				type_node_t* expr_type = type_check_expr(type_env, 
-					((if_pair_t*) curr->current_ele)->condition);
-				if (expr_type->type == ERROR_T) { free(expr_type); failed |= true; }
-				else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) free(expr_type); 
-				else {
+				type_node_t* expr_type = type_check_expr(type_env, ((if_pair_t*) curr->current_ele)->condition);
+				CHECK_ERR(expr_type, failed) (expr_type->type != BOOL_T || expr_type->arr_count != 0) {
 					printf("TYPE ERROR: line %d, pos %d: if condition does not evaluate to a boolean\n",
 							statement->line, statement->pos);
 					failed |= true; 
 				}
-
-				failed |= type_check_block(type_env, 
-						((if_pair_t*) curr->current_ele)->block);
+				failed |= type_check_block(type_env, ((if_pair_t*) curr->current_ele)->block);
 			}
 			break; 
 		case FOR:
 			if (statement->children.for_tree.initializer->kind == ASSIGN) {
-				// type check state also adds to symbol table since symbol table is passed by pointer 
-				if (!type_check_state(type_env, statement->children.for_tree.initializer)){
-
-					// type check loop condition 
-					type_node_t* expr_type = type_check_expr(type_env, 
-						statement->children.for_tree.condition);
-					if (expr_type->type == ERROR_T) {
-						free(expr_type); failed |= true; 
-					
-					// verify loop condition is a boolean 
-					} else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) {
-						free(expr_type);
-						if (statement->children.for_tree.updater->kind != BINOP) {
-							printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
-								statement->line, statement->pos); failed |= true; 
-						} 
-					} else {
-						if (!expr_type) {
-							printf("TYPE ERROR: line %d, pos %d: for condition is not an expression\n",
-								statement->line, statement->pos);
-						} else {
-							printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
-								statement->line, statement->pos);
-						}
-						failed |= true; 
-					}
-				} else failed |= true; 
-
+				failed |= type_check_state(type_env, statement->children.for_tree.initializer); 
+				type_node_t* condition_type = type_check_expr(type_env, statement->children.for_tree.condition);
+				CHECK_ERR(condition_type, failed) (condition_type->type != BOOL_T || condition_type->arr_count != 0) {
+					printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
+						statement->line, statement->pos);
+				}
+				if (statement->children.for_tree.updater->kind != BINOP) {
+					printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
+						statement->line, statement->pos); failed |= true; 
+				} 
 			} else {
 				printf("TYPE ERROR: line %d, pos %d: for loop should have variable declaration first\n",
 					statement->line, statement->pos); failed |= true; 
 			}
-
 			failed |= type_check_block(type_env, statement->children.for_tree.block);
 			break; 
 		case WHILE: {
 			type_node_t* expr_type = type_check_expr(type_env, 
 				statement->children.while_tree.condition);
-			if (expr_type->type == ERROR_T) { free(expr_type); failed |= true; }
-			else if (expr_type->type == BOOL_T && expr_type->arr_count == 0) free(expr_type);
-			else {
-				if (!expr_type) {
-					printf("TYPE ERROR: line %d, pos %d: while condition is not an expression\n",
-						statement->line, statement->pos);
-				} else {
-					printf("TYPE ERROR: line %d, pos %d: while condition does not evaluate to a boolean\n",
-						statement->line, statement->pos);
-				}
+			CHECK_ERR(expr_type, failed) (expr_type->type != BOOL_T || expr_type->arr_count != 0) {
+				printf("TYPE ERROR: line %d, pos %d: while condition does not evaluate to a boolean\n",
+					statement->line, statement->pos);
 				failed |= true; 
 			}
 			failed |= type_check_block(type_env, statement->children.while_tree.block);
@@ -344,8 +313,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			break; 
 		case RET: {
 			type_node_t* ret_type = type_check_expr(type_env, statement->children.ret.expression);
-			if (ret_type->type == ERROR_T) { failed |= true; }
-			else if (!type_cmp(ret_type, type_env->expected_type)) {
+			CHECK_ERR(ret_type, failed) (!type_cmp(ret_type, type_env->expected_type)) {
 				char* expected = type_str(type_env->expected_type); 
 				char* actual = type_str(ret_type); 
 				printf("TYPE ERROR: line %d, pos %d: expected return type %s but got type %s\n", 
@@ -353,7 +321,6 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				free(expected); free(actual); 
 				failed |= true; 
 			}
-			free(ret_type); 
 			break; 
 		}
 		case ASSIGN:
@@ -363,16 +330,13 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				failed |= true; 
 				break; 
 			} else {
-				// insert into symbol table anyways to prevent cascading errors
 				symbol_t* sym = init_var_sym(statement->children.assign.identifier->id_type, 
 					statement->children.assign.identifier->name, 
 					type_env->curr_sid);
 				insert(type_env, sym);
 
 				type_node_t* rval_type = type_check_expr(type_env, statement->children.assign.value);
-				if (rval_type->type == ERROR_T) {
-					free(rval_type); failed |= true; 
-				} else if (!type_cmp(rval_type, statement->children.assign.identifier->id_type)) {
+				CHECK_ERR(rval_type, failed) (!type_cmp(rval_type, statement->children.assign.identifier->id_type)) {
 					char* rval_str = type_str(rval_type);
 					char* expected_str = type_str(statement->children.assign.identifier->id_type);
 					printf("TYPE ERROR: line %d, pos %d: cannot assign expression of type %s to variable of type %s\n",
@@ -388,10 +352,7 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 				&(statement->children.expr));
 			if (expr_type->type == ERROR_T) {
 				free(expr_type); failed |= true; 
-			} else if (expr_type) {
-				free(expr_type);
-				failed |= false; 
-			}
+			} 
 			break; 
 		}
 
@@ -424,22 +385,6 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 
 			switch (expr->children.binop.op) {
 				case ADD_NODE:
-					if (type_cmp(lhs, rhs) && 
-						lhs->arr_count == 0 && 
-						lhs->type != BOOL_T) type = lhs->type; 
-					else {
-						if (!type_cmp(lhs, rhs)) {
-							printf("TYPE ERROR: line %d, pos %d: can only add identical types\n",
-								expr->line, expr->pos);
-						} else if (lhs->arr_count) {
-							printf("TYPE ERROR: line %d, pos %d: cannot add arrays\n",
-								expr->line, expr->pos);
-						} else {
-							printf("TYPE ERROR: line %d, pos %d: cannot add booleans\n",
-								expr->line, expr->pos);
-						}
-					}
-					break; 
 				case SUB_NODE:
 				case MUL_NODE:
 				case DIV_NODE:
@@ -537,7 +482,6 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 			break; 
 		}
 		case CALL: {
-			bool erroneous = false; 
 			symbol_t* sym = lookup(type_env, expr->children.call.func_name);
 			if (sym && sym->kind == FUNC_SYM) {
 				list_el_t* expected_types = sym->type.func_signature.param_types->head; 
@@ -547,7 +491,6 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					type_node_t* param_type = type_check_expr(type_env, param->current_ele);
 					if (param_type->type == ERROR_T) {
 						free(param_type); 
-						type = ERROR_T; 
 						goto END; 
 					} else append(param_types, param_type); 
 				}
@@ -556,19 +499,19 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					if (!expected_types) {
 						printf("TYPE ERROR: line %d, pos %d: function call has too many parameters\n",
 							expr->line, expr->pos);
-						break; 
+						goto END; 
 					}
 
 					type_node_t* actual = curr->current_ele;
 					type_node_t* formal = expected_types->current_ele;
 
 					if (!type_cmp(actual, formal)) {
-						erroneous = 1;
 						char* actual_str = type_str(actual);
 						char* formal_str = type_str(formal);
 						printf("TYPE ERROR: line %d, pos %d: function parameter is expected to be type %s but received type %s\n",
 							expr->line, expr->pos, formal_str, actual_str);
 						free(actual_str); free(formal_str);
+						goto END; 
 					}
 
 					expected_types = expected_types->next;
@@ -577,14 +520,11 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 				if (expected_types) {
 					printf("TYPE ERROR: line %d, pos %d: function call has too few parameters\n",
 						expr->line, expr->pos);
+					goto END; 
 				}
 
-				// free_list(param_types);
-
-				if (!erroneous) {
-					type = sym->type.func_signature.ret_type->type;
-					arr_count = sym->type.func_signature.ret_type->arr_count;
-				} 
+				type = sym->type.func_signature.ret_type->type;
+				arr_count = sym->type.func_signature.ret_type->arr_count;
 			} else {
 				if (sym) {
 					printf("TYPE ERROR: line %d, pos %d: %s is not a function\n",
@@ -593,6 +533,7 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 					printf("TYPE ERROR: line %d, pos %d: %s does not exist\n",
 						expr->line, expr->pos, expr->children.call.func_name);
 				}
+				goto END; 
 			}
 			break; 
 		}
@@ -619,10 +560,9 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 		default: type = ERROR_T; 
 	}
 
-	if (!type) type = ERROR_T; 
-
 	END: 
 		// TODO: sort out types
+		if (!type) type = ERROR_T; 
 		expr->expr_type = type_node(type, arr_count); 
 		return expr->expr_type; 
 }

@@ -39,7 +39,9 @@ int main(int argc, char* argv[]) {
 		// generate code and get reference to entry point, i.e. main function 
 		char* error = NULL;
 		LLVMModuleRef app = generate_module(parser->ast); 
-		LLVMWriteBitcodeToFile(app, "pcc.bc"); 
+		if (LLVMWriteBitcodeToFile(app, "pcc.bc")) {
+			puts("error writing bitcode");
+		}
 		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
 		LLVMDisposeMessage(error); 
 		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main");

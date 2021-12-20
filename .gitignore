@@ -1,6 +1,7 @@
 *.o
 *.bc
 *.ll
+*.dot
 pcc
 pcc_debug
 /.vscode

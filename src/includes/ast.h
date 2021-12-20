@@ -4,6 +4,7 @@
 #include "list.h" 
 
 #define type_cmp(t1, t2) ((t1->arr_count == t2->arr_count) && (t1->type == t2->type))
+#define CHECK_ERR(t, b) if (t->type == ERROR_T) { free(t); b |= true; } else if 
 
 typedef struct expr_ast_s expr_ast_t; 
 typedef struct state_ast_s state_ast_t; 
