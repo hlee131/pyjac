@@ -190,11 +190,11 @@ state_ast_t* parse_if(token_stream_t* ts) {
 	}
 
 	if (curr(ts).tok_type == ELSE_TOK) {
-		expr_ast_t* condition = bool_node(1, curr(ts).line, curr(ts).pos); 
+		// expr_ast_t* condition = NULL; 
 		adv(ts);
 		expect(COLON_TOK, ts); 
 		block_ast_t block = parse_block(ts); 
-		append(if_pairs, if_pair(condition, block)); 
+		append(if_pairs, if_pair(NULL, block)); 
 	}	
 
 	return if_ast(if_pairs, line, pos); 

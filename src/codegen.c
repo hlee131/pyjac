@@ -92,6 +92,7 @@ symtab_t* make_llvm_symtab(prog_ast_t program, LLVMModuleRef mod) {
 // turn ast leaves into basic block 
 LLVMBasicBlockRef generate_bb(LLVMBuilderRef builder, block_ast_t block, symtab_t* ref_table) {
 	LLVMBasicBlockRef new_bb = LLVMAppendBasicBlock(ref_table->curr_func, "bb"); 
+	LLVMPositionBuilderAtEnd(builder, new_bb);
     foreach (block, curr) {
         write_state(builder, curr->current_ele, ref_table); 
     }
@@ -125,10 +126,7 @@ LLVMValueRef generate_binop(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* 
     LLVMValueRef rhs = generate_expr(builder, expr->children.binop.rhs, ref_table);
     switch (expr->children.binop.op) {
         case ADD_NODE:
-            if (expr->expr_type->type == INT_T) {
-				puts("is int");
-				return LLVMBuildAdd(builder, lhs, rhs, "int_add"); 
-			}
+            if (expr->expr_type->type == INT_T) return LLVMBuildAdd(builder, lhs, rhs, "int_add"); 
             else return LLVMBuildFAdd(builder, lhs, rhs, "double_add"); 
         case SUB_NODE:
             if (expr->expr_type->type == INT_T) return LLVMBuildSub(builder, lhs, rhs, "int_sub");
@@ -141,22 +139,28 @@ LLVMValueRef generate_binop(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* 
             if (expr->expr_type->type == INT_T) return LLVMBuildUDiv(builder, lhs, rhs, "int_div");
             else return LLVMBuildExactUDiv(builder, lhs, rhs, "double_div"); 
         case EQ_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntEQ, lhs, rhs, "int_eq"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntEQ, lhs, rhs, "int_eq"); 
             else return LLVMBuildFCmp(builder, LLVMRealUEQ, lhs, rhs, "double_eq"); 
         case NEQ_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntNE, lhs, rhs, "int_neq"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntNE, lhs, rhs, "int_neq"); 
             else return LLVMBuildFCmp(builder, LLVMRealUNE, lhs, rhs, "double_neq");
         case LT_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntULT, lhs, rhs, "int_lt"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntULT, lhs, rhs, "int_lt"); 
             else return LLVMBuildFCmp(builder, LLVMRealULT, lhs, rhs, "double_lt");
         case GT_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntUGT, lhs, rhs, "int_gt"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntUGT, lhs, rhs, "int_gt"); 
             else return LLVMBuildFCmp(builder, LLVMRealUGT, lhs, rhs, "double_gt");
         case LE_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntULE, lhs, rhs, "int_le"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntULE, lhs, rhs, "int_le"); 
             else return LLVMBuildFCmp(builder, LLVMRealULE, lhs, rhs, "double_le");
         case GE_NODE:
-            if (expr->expr_type->type == INT_T) return LLVMBuildICmp(builder, LLVMIntUGE, lhs, rhs, "int_ge"); 
+            if (expr->children.binop.lhs->expr_type->type == INT_T) 
+				return LLVMBuildICmp(builder, LLVMIntUGE, lhs, rhs, "int_ge"); 
             else return LLVMBuildFCmp(builder, LLVMRealUGE, lhs, rhs, "double_ge");
         case INDEX_NODE:
         case ASSIGN_NODE: 
@@ -172,21 +176,26 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
             LLVMBasicBlockRef curr_bb = LLVMGetLastBasicBlock(ref_table->curr_func); 
             LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-branch");
             foreach (state->children.if_tree, curr) {
-                if_pair_t* pair = curr->current_ele; 
-                LLVMValueRef condition = generate_expr(builder, pair->condition, ref_table);
-                enter_scope(ref_table); 
-                LLVMBasicBlockRef t = generate_bb(builder, pair->block, ref_table); 
-                exit_scope(ref_table); 
-                LLVMBasicBlockRef f = LLVMAppendBasicBlock(ref_table->curr_func, "else"); 
-				LLVMPositionBuilderAtEnd(builder, curr_bb); 
-                LLVMBuildCondBr(builder, condition, t, f); 
-                // keeps track where to insert the next conditional or merge branch 
-                curr_bb = f; 
-				// merge true branch into the merge basic block 
-				// TODO: br not being generated 
-				LLVMPositionBuilderAtEnd(builder, t);
-				printf("inserting br at %s\n", LLVMGetBasicBlockName(LLVMGetInsertBlock(builder))); 
-                LLVMBuildBr(builder, merge_bb); 
+				if_pair_t* pair = curr->current_ele; 
+				// else blocks have a null condition 
+				if (!pair->condition) {
+					LLVMPositionBuilderAtEnd(builder, curr_bb); 
+					foreach (pair->block, curr) 
+						write_state(builder, curr->current_ele, ref_table); 
+				} else {
+					LLVMValueRef condition = generate_expr(builder, pair->condition, ref_table);
+					enter_scope(ref_table); 
+					LLVMBasicBlockRef t = generate_bb(builder, pair->block, ref_table); 
+					exit_scope(ref_table); 
+					LLVMBasicBlockRef f = LLVMAppendBasicBlock(ref_table->curr_func, "else"); 
+					LLVMPositionBuilderAtEnd(builder, curr_bb); 
+					LLVMBuildCondBr(builder, condition, t, f); 
+					// keeps track where to insert the next conditional or merge branch 
+					curr_bb = f; 
+					// merge true branch into the merge basic block 
+					LLVMPositionBuilderAtEnd(builder, t);
+					LLVMBuildBr(builder, merge_bb); 
+				}
             }
             // merge into the next statement by creating an empty basic block the next statement adds to 
             LLVMPositionBuilderAtEnd(builder, curr_bb);

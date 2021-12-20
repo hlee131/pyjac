@@ -267,13 +267,16 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 	switch (statement->kind) {
 		case IF: 
 			foreach(statement->children.if_tree, curr) {
-				type_node_t* expr_type = type_check_expr(type_env, ((if_pair_t*) curr->current_ele)->condition);
-				CHECK_ERR(expr_type, failed) (expr_type->type != BOOL_T || expr_type->arr_count != 0) {
-					printf("TYPE ERROR: line %d, pos %d: if condition does not evaluate to a boolean\n",
-							statement->line, statement->pos);
-					failed |= true; 
+				if_pair_t* pair = (if_pair_t*) curr->current_ele;
+				if (pair->condition) {
+					type_node_t* expr_type = type_check_expr(type_env, pair->condition);
+					CHECK_ERR(expr_type, failed) (expr_type->type != BOOL_T || expr_type->arr_count != 0) {
+						printf("TYPE ERROR: line %d, pos %d: if condition does not evaluate to a boolean\n",
+								statement->line, statement->pos);
+						failed |= true; 
+					}
 				}
-				failed |= type_check_block(type_env, ((if_pair_t*) curr->current_ele)->block);
+				failed |= type_check_block(type_env, pair->block);
 			}
 			break; 
 		case FOR:
@@ -561,7 +564,6 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 	}
 
 	END: 
-		// TODO: sort out types
 		if (!type) type = ERROR_T; 
 		expr->expr_type = type_node(type, arr_count); 
 		return expr->expr_type; 

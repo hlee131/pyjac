@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 		// generate code and get reference to entry point, i.e. main function 
 		char* error = NULL;
 		LLVMModuleRef app = generate_module(parser->ast); 
+		LLVMDumpModule(app);
 		if (LLVMWriteBitcodeToFile(app, "pcc.bc")) {
 			puts("error writing bitcode");
 		}

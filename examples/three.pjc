@@ -1,8 +1,7 @@
 func Int: () => main:
 	var Int: five = 5
-	[if (five > 3):
+	if (five > 3):
 		five = 3 
 	else:
-		five = 2] 
-	var Int: six = 6
-	ret five + six
+		five = 4
+	ret five + 2
