@@ -1,5 +1,4 @@
-planning
-a.out
-debug.out
-todo
+*.o
+pcc
+pcc_debug
 /.vscode
