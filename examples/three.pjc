@@ -1,7 +1,10 @@
 func Int: () => main:
-	var Int: five = 5
-	if (five > 3):
-		five = 3 
-	else:
-		five = 4
-	ret five + 2
+	var Int: sum = 1
+	while (sum <= 1000):
+		if (sum == 3):
+			sum = sum * 2 
+		elif (sum == 2):
+			sum = sum * 4
+		else:
+			sum = sum * 6
+	ret sum + 3

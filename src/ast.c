@@ -280,21 +280,23 @@ bool type_check_state(symtab_t* type_env, state_ast_t* statement) {
 			}
 			break; 
 		case FOR:
-			if (statement->children.for_tree.initializer->kind == ASSIGN) {
+			if (statement->children.for_tree.initializer->kind == ASSIGN) 
 				failed |= type_check_state(type_env, statement->children.for_tree.initializer); 
-				type_node_t* condition_type = type_check_expr(type_env, statement->children.for_tree.condition);
-				CHECK_ERR(condition_type, failed) (condition_type->type != BOOL_T || condition_type->arr_count != 0) {
-					printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
-						statement->line, statement->pos);
-				}
-				if (statement->children.for_tree.updater->kind != BINOP) {
-					printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
-						statement->line, statement->pos); failed |= true; 
-				} 
-			} else {
+			else 
 				printf("TYPE ERROR: line %d, pos %d: for loop should have variable declaration first\n",
 					statement->line, statement->pos); failed |= true; 
+
+			type_node_t* condition_type = type_check_expr(type_env, statement->children.for_tree.condition);
+			CHECK_ERR(condition_type, failed) (condition_type->type != BOOL_T || condition_type->arr_count != 0) {
+				printf("TYPE ERROR: line %d, pos %d: for condition does not evaluate to a boolean\n",
+					statement->line, statement->pos); failed |= true; 
 			}
+
+			type_node_t* update_type = type_check_expr(type_env, statement->children.for_tree.updater);
+			CHECK_ERR(update_type, failed) (statement->children.for_tree.updater->kind != BINOP) {
+				printf("TYPE ERROR: line %d, pos %d: for updater is not a binary operation\n",
+					statement->line, statement->pos); failed |= true; 
+			} 
 			failed |= type_check_block(type_env, statement->children.for_tree.block);
 			break; 
 		case WHILE: {
@@ -395,20 +397,19 @@ type_node_t* type_check_expr(symtab_t* type_env, expr_ast_t* expr) {
 						lhs->arr_count == 0 && 
 						(lhs->type == INT_T ||
 						lhs->type == DOUBLE_T)) type = lhs->type;
-						else {
-							if (!type_cmp(lhs, rhs)) {
-								printf("TYPE ERROR: line %d, pos %d: can only use identical types\n",
-									expr->line, expr->pos);
-							} else if (lhs->arr_count) {
-								printf("TYPE ERROR: line %d, pos %d: cannot be an array\n",
-									expr->line, expr->pos);
-							} else {
-								printf("TYPE ERROR: line %d, pos %d: can only be integer or double\n",
-									expr->line, expr->pos);
-							}
-
+					else {
+						if (!type_cmp(lhs, rhs)) {
+							printf("TYPE ERROR: line %d, pos %d: can only use identical types\n",
+								expr->line, expr->pos);
+						} else if (lhs->arr_count) {
+							printf("TYPE ERROR: line %d, pos %d: cannot be an array\n",
+								expr->line, expr->pos);
+						} else {
+							printf("TYPE ERROR: line %d, pos %d: can only be integer or double\n",
+								expr->line, expr->pos);
 						}
-						break; 
+					}
+					break; 
 				case EQ_NODE:
 				case NEQ_NODE:
 					if (type_cmp(lhs, rhs)) type = BOOL_T; 

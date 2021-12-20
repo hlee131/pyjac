@@ -20,12 +20,6 @@ LLVMModuleRef generate_module(prog_ast_t program) {
         LLVMValueRef func_ref 		= 
 			ref_table->curr_func 	= 
             lookup(ref_table, function->children.func.identifier->name)->type.val_ref;
-
-        // LLVMBasicBlockRef function_body = LLVMAppendBasicBlock(func_ref, "body");
-
-        // store entry block for variable allocations and 
-        // for getting the parent function reference 
-        // ref_table->curr_func = LLVMGetEntryBasicBlock(func_ref); 
         
         // allocate parameters on stack for mutability 
         int param_count = 1; 
@@ -40,7 +34,6 @@ LLVMModuleRef generate_module(prog_ast_t program) {
         }
 
         // generate function body basic block 
-        // LLVMPositionBuilderAtEnd(builder, function_body); 
         generate_bb(builder, function->children.func.block, ref_table); 
 
         // cleanup: exit scope, check if return void is needed 
@@ -164,6 +157,8 @@ LLVMValueRef generate_binop(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* 
             else return LLVMBuildFCmp(builder, LLVMRealUGE, lhs, rhs, "double_ge");
         case INDEX_NODE:
         case ASSIGN_NODE: 
+			// TODO: remove extraneous load in optimizations?
+			LLVMInstructionEraseFromParent(lhs); 
             return LLVMBuildStore(builder, rhs, 
 				lookup(ref_table, expr->children.binop.lhs->children.str_val)->type.val_ref); 
     }
@@ -173,13 +168,13 @@ LLVMValueRef generate_binop(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* 
 void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table) {
     switch (state->kind) {
         case IF: {
-            LLVMBasicBlockRef curr_bb = LLVMGetLastBasicBlock(ref_table->curr_func); 
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-branch");
+			LLVMBasicBlockRef curr_bb = LLVMGetInsertBlock(builder); 
+            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-if");
             foreach (state->children.if_tree, curr) {
 				if_pair_t* pair = curr->current_ele; 
+				LLVMPositionBuilderAtEnd(builder, curr_bb); 
 				// else blocks have a null condition 
 				if (!pair->condition) {
-					LLVMPositionBuilderAtEnd(builder, curr_bb); 
 					foreach (pair->block, curr) 
 						write_state(builder, curr->current_ele, ref_table); 
 				} else {
@@ -206,7 +201,7 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
         case FOR: {
             enter_scope(ref_table); 
             // create merge basic block for when the for loop ends 
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-branch"); 
+            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-for"); 
             // write the initializer 
             write_state(builder, state->children.for_tree.initializer, ref_table); 
 
@@ -216,16 +211,12 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
             LLVMPositionBuilderAtEnd(builder, for_head); 
             LLVMValueRef condition = generate_expr(builder, state->children.for_tree.condition, ref_table); 
             LLVMBasicBlockRef for_block = generate_bb(builder, state->children.for_tree.block, ref_table); 
-
+			// generate update and branch in leaf nodes 
+			generate_expr(builder, state->children.for_tree.updater, ref_table);
+			LLVMBuildBr(builder, for_head);
             // write conditional branch 
 			LLVMPositionBuilderAtEnd(builder, for_head); 
             LLVMBuildCondBr(builder, condition, for_block, merge_bb); 
-
-            // write updater into the end of the block 
-            // and branch back into the conditional 
-            LLVMPositionBuilderAtEnd(builder, for_block);
-            generate_expr(builder, state->children.for_tree.updater, ref_table); 
-            LLVMBuildBr(builder, for_head);
 
             // exit for loop scope 
             exit_scope(ref_table); 
@@ -234,7 +225,7 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
         }
         case WHILE: {
             enter_scope(ref_table); 
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-branch");
+            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-while");
 
             // put condition in new basic block 
             LLVMBasicBlockRef while_head = LLVMAppendBasicBlock(ref_table->curr_func, "while-head");
@@ -242,12 +233,10 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
             LLVMPositionBuilderAtEnd(builder, while_head); 
             LLVMValueRef condition = generate_expr(builder, state->children.while_tree.condition, ref_table);
             LLVMBasicBlockRef while_bb = generate_bb(builder, state->children.while_tree.block, ref_table); 
+			// loop back to condition in leaf nodes
+            LLVMBuildBr(builder, while_head); 
 			LLVMPositionBuilderAtEnd(builder, while_head); 
             LLVMBuildCondBr(builder, condition, while_bb, merge_bb); 
-
-            // loop back to condition 
-            LLVMPositionBuilderAtEnd(builder, while_bb);
-            LLVMBuildBr(builder, while_head); 
             
             exit_scope(ref_table);
 			LLVMPositionBuilderAtEnd(builder, merge_bb);
