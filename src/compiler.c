@@ -39,17 +39,17 @@ int main(int argc, char* argv[]) {
 		// generate code and get reference to entry point, i.e. main function 
 		char* error = NULL;
 		LLVMModuleRef app = generate_module(parser->ast); 
-		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
-		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main");
-		LLVMDisposeMessage(error); 
-
 		LLVMWriteBitcodeToFile(app, "pcc.bc"); 
+		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
+		LLVMDisposeMessage(error); 
+		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main");
 
 		// create the execution engine 
 		LLVMExecutionEngineRef engine; 
 		error = NULL;
 		LLVMLinkInMCJIT();
 		LLVMInitializeNativeTarget(); 
+		LLVMInitializeNativeAsmPrinter(); 
 		if (LLVMCreateExecutionEngineForModule(&engine, app, &error) != 0) {
 			printf("cannot create execution engine, aborting ... \n");
 			abort(); 
@@ -60,13 +60,9 @@ int main(int argc, char* argv[]) {
 			exit(EXIT_FAILURE); 
 		}
 
-		// call main function 
-		LLVMGenericValueRef args[] = {
-			LLVMCreateGenericValueOfInt(LLVMInt32Type(), argc, 0),
-			LLVMCreateGenericValueOfPointer(LLVMArrayType(LLVMInt8Type(), argc))
-		}; 
-
-		LLVMGenericValueRef output = LLVMRunFunction(engine, entry_point, 2, args); 
+		// get function pointer 
+		int (*prog_main)() = (int (*)()) LLVMGetFunctionAddress(engine, "main");
+		prog_main(); 
 
 		return 0; 
 	} else {

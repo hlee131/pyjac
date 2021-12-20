@@ -1,9 +1,9 @@
 [ Function headers? ]
-func Int: (Int: argc, Arr:Str: argv) => main:
+func Int: () => main:
 	test(5)
-	if (argc == 2):
-		while (argc != 5):
-			argc = argc + 1
+	if (3 == 2):
+		while (3 != 5):
+			test(5)
 
 func Int: (Int: start, Int: end) => sum_nums:
 	var Int: sum = 0

@@ -13,7 +13,7 @@ typedef struct symtab_s {
     list_t* stacks[BUCKET_COUNT]; 
     int curr_sid; 
     type_node_t* expected_type; 
-    LLVMBasicBlockRef entry_block; 
+    LLVMValueRef curr_func; 
 } symtab_t; 
 
 typedef struct symbol_s {

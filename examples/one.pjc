@@ -5,7 +5,7 @@
 
 
 
-func Int: (Int: argc, Arr:Str: argv) => main:
+func Int: () => main:
 
 	
 	var Int: my_num = 5
@@ -16,12 +16,11 @@ func Int: (Int: argc, Arr:Str: argv) => main:
 
 	ret 0
 	
-`
 
 func Double: (Double: x) => double:
 	[ emitting if tokens? ]
 	while (x >= 5):
-		if ((x == 10):
+		if (x == 10):
 			for (var Int: i = 0 | i < x | i = i * 2):
 				x = x - 1
 		elif (x == 5):
