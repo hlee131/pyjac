@@ -21,8 +21,10 @@ LLVMModuleRef generate_module(prog_ast_t program) {
 			ref_table->curr_func 	= 
             lookup(ref_table, function->children.func.identifier->name)->type.val_ref;
         
+		LLVMAppendBasicBlock(func_ref, "function-body"); 
+
         // allocate parameters on stack for mutability 
-        int param_count = 1; 
+        int param_count = 0; 
         foreach (function->children.func.params, curr) {
             id_ast_t* param = (id_ast_t*) curr->current_ele; 
             // allocate on stack and build store instruction 
@@ -34,7 +36,9 @@ LLVMModuleRef generate_module(prog_ast_t program) {
         }
 
         // generate function body basic block 
-        generate_bb(builder, function->children.func.block, ref_table); 
+		foreach (function->children.func.block, curr) {
+			write_state(builder, curr->current_ele, ref_table); 
+		}
 
         // cleanup: exit scope, check if return void is needed 
         // unallocate arguments and local variables 
@@ -82,7 +86,7 @@ symtab_t* make_llvm_symtab(prog_ast_t program, LLVMModuleRef mod) {
     return table;
 }
 
-// turn ast leaves into basic block 
+// turn ast subtrees into basic block 
 LLVMBasicBlockRef generate_bb(LLVMBuilderRef builder, block_ast_t block, symtab_t* ref_table) {
 	LLVMBasicBlockRef new_bb = LLVMAppendBasicBlock(ref_table->curr_func, "bb"); 
 	LLVMPositionBuilderAtEnd(builder, new_bb);

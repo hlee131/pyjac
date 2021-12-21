@@ -20,17 +20,10 @@ In the type checker, error handling is implemented with a `error` subtype. This 
 ## Intermediate Code 
 After type checking, LLVM IR is generated using the AST. LLVM IR allows for further optimizations. 
 
-## Future improvements
-### Priority 
-- parser error recovery and handling
-- ternary operator, negation, bitwise logic, shortcut assignment, increment, decrement, negative numbers, skip keyword
-- tabs can be spaces or tabs 
-### Nice to have
-- function overloading
-- overload + with array concatentation
-- overload comparison for strings
-- implicit casts between ints and doubles
-- source location structs & imports 
-- garbage collection 
-- first class functions
-- lazy evaluation
+## Improvements Board 
+| Immediate Tasks | Eventual Tasks | Low Priority Features | 
+|-----------------|----------------|-----------------------|
+| Arrays and strings codegen | Parser error recovery | Function and operator overloading |
+| Runtime library (io, math, etc.)| Tabs can be spaces | Casting |
+| Garbage Collection | | First class functions |
+| ternary operator, negation, bitwise logic, shortcut assignment, negative numbers, skip keyword | | Lazy evaluation |
