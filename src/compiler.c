@@ -1,5 +1,6 @@
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <string.h>
 
 #include <llvm-c/Analysis.h> 
 #include <llvm-c/ExecutionEngine.h>
@@ -12,21 +13,29 @@
 #include "includes/codegen.h"
 
 int main(int argc, char* argv[]) {
+
+	// settings
+	char* source_file; 
+	char* out_file = "out";
+	int keep_flag = 0;  
 	
-	if (argc < 2) {
-		puts("error: please supply a file name");
-		return 1; 
+	// parse non option argument 
+	source_file = argv[1]; 
+	argc--; argv++; 
+
+	// parse flags 
+	while (*argv) {
+		keep_flag |= strcmp(*argv, "--keep-files") == 0;
+		if (strcmp(*argv, "-o") == 0) {
+			if (++argv) out_file = *argv;
+			else puts("-o missing file name"); 
+		}
+		argv++; 
 	}
 
-	char* file = read_file(argv[1]);
-
+	char* file = read_file(source_file);
 	if (file) {	
 		parser_t* parser = init_parser(file);
-		// token_stream_t* s = parser->token_stream; 
-		// for (int i = 0; i < s->stream_len; i++) {
-		// 	puts(tok_string(s->stream[i].tok_type)); 
-		// }
-		// printf("%d\n", parser->token_stream->stream_len);
 		parse_program(parser);
 		bool types = do_type_check(parser->ast);
 		if (types) {
@@ -35,43 +44,30 @@ int main(int argc, char* argv[]) {
 			puts("types correct");
 		}
 		
-		// jit driver 
-		// generate code and get reference to entry point, i.e. main function 
+		// generate executable 
 		char* error = NULL;
 		LLVMModuleRef app = generate_module(parser->ast); 
 		LLVMDumpModule(app);
-		if (LLVMWriteBitcodeToFile(app, "pcc.bc")) {
-			puts("error writing bitcode");
-		}
 		LLVMVerifyModule(app, LLVMAbortProcessAction, &error);
 		LLVMDisposeMessage(error); 
-		LLVMValueRef entry_point = LLVMGetNamedFunction(app, "main");
-
-		// create the execution engine 
-		LLVMExecutionEngineRef engine; 
-		error = NULL;
-		LLVMLinkInMCJIT();
-		LLVMInitializeNativeTarget(); 
-		LLVMInitializeNativeAsmPrinter(); 
-		if (LLVMCreateExecutionEngineForModule(&engine, app, &error) != 0) {
-			printf("cannot create execution engine, aborting ... \n");
+		if (LLVMWriteBitcodeToFile(app, ".tmp.bc")) {
+			puts("error writing bitcode, aborting compilation");
 			abort(); 
+		} else {
+			// ir to assembly 
+			system("llc -filetype=obj .tmp.bc"); 
+			// assembly to machine code 
+			char command[14 + strlen(source_file) + 1];
+			strcpy(command, "gcc .tmp.o -o "); 
+			strcat(command, out_file);
+			system(command); 
+			// clean up
+			if (!keep_flag) system("rm -f .tmp.bc .tmp.o");
+			return 0; 
 		}
-		if (error) {
-			printf("error: %s", error);
-			LLVMDisposeMessage(error);
-			exit(EXIT_FAILURE); 
-		}
-
-		// get function pointer 
-		int (*prog_main)() = (int (*)()) LLVMGetFunctionAddress(engine, "main");
-		prog_main(); 
-
-		return 0; 
-	} else {
-		puts("error: invalid file name");
-		return 1; 
-	}
+	} 
+	puts("error: invalid file name");
+	return 1; 
 }
 
 

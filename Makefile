@@ -3,7 +3,7 @@ all:
 	make objects && ./build/build.sh pcc
 
 clean:
-	rm -f pcc pcc_debug build/*.o *.dot *.ll *.bc
+	rm -f pcc pcc_debug *.o .*.dot *.ll *.bc
 
 objects: 
 	gcc `llvm-config --cflags` -c src/compiler.c src/lexer.c src/ast.c src/parser.c src/list.c src/utils.c src/symtab.c src/codegen.c 
