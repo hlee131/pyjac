@@ -1,7 +1,7 @@
 func Int: () => main:
 	var Int: sum = 0
 	for (var Int: i = 1 | i <= 10 | i = i + 1):
-		sum = sum + i
+		sum = add(sum, i)
 	ret sum 
 
 func Int: (Int: x, Int: y) => add:

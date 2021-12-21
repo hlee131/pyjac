@@ -101,8 +101,20 @@ LLVMValueRef generate_expr(LLVMBuilderRef builder, expr_ast_t* expr, symtab_t* r
     switch (expr->kind) {
         case BINOP:
             return generate_binop(builder, expr, ref_table); 
-        // TODO: implement function call 
-        case CALL:
+        case CALL: {
+			char* func_name = expr->children.call.func_name; 
+			LLVMValueRef func_ref = lookup(ref_table, func_name)->type.val_ref;
+			LLVMTypeRef func_type = LLVMGetReturnType(LLVMTypeOf(func_ref));
+			unsigned int argc = expr->children.call.params->length; 
+			LLVMValueRef args[argc]; 
+
+			// generate array of arguments 
+			int i = 0;
+			foreach(expr->children.call.params, curr) 
+				args[i++] = generate_expr(builder, curr->current_ele, ref_table); 
+			
+			return LLVMBuildCall2(builder, func_type, func_ref, args, argc, func_name); 
+		}
         case INT_L:
         case BOOL_L: 
             return LLVMConstInt(LLVMInt32Type(), expr->children.int_val, 0); 
