@@ -54,15 +54,17 @@ int main(int argc, char* argv[]) {
 			puts("error writing bitcode, aborting compilation");
 			abort(); 
 		} else {
+			// generate builtins object for linking 
+			system("clang -c src/builtins.c -o .built.o"); 
 			// ir to assembly 
 			system("llc -filetype=obj .tmp.bc"); 
 			// assembly to machine code 
 			char command[14 + strlen(source_file) + 1];
-			strcpy(command, "gcc .tmp.o -o "); 
+			strcpy(command, "gcc .tmp.o .built.o -o "); 
 			strcat(command, out_file);
 			system(command); 
 			// clean up
-			if (!keep_flag) system("rm -f .tmp.bc .tmp.o");
+			if (!keep_flag) system("rm -f .tmp.bc .tmp.o .built.o");
 			return 0; 
 		}
 	} 

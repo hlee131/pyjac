@@ -14,5 +14,5 @@ debug_objects:
 debug:
 	make debug_objects && ./build/build.sh pcc_debug
 
-dot_cfg:
-	opt -dot-cfg pcc.bc
+cfg:
+	opt -dot-cfg .tmp.bc

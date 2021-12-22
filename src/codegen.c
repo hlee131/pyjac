@@ -57,6 +57,7 @@ LLVMValueRef alloca_at_entry(struct symtab_s* ref_table, LLVMTypeRef type, char*
 
 symtab_t* make_llvm_symtab(prog_ast_t program, LLVMModuleRef mod) {
     struct symtab_s* table = init_symtab(); 
+	// insert user defined functions 
     foreach (program, curr_func) {
         // generate array of param types 
         state_ast_t* function = (state_ast_t*) curr_func->current_ele;
@@ -83,6 +84,24 @@ symtab_t* make_llvm_symtab(prog_ast_t program, LLVMModuleRef mod) {
         // insert ref into symbol table
         insert_LLVM_ref(func, FUNC_SYM, function->children.func.identifier->name, table); 
     }
+
+	// insert builtin functions 
+	LLVMTypeRef show_args[] = { LLVMInt32Type() }; 
+	LLVMValueRef show = LLVMAddFunction(mod, "show", LLVMFunctionType(
+		LLVMInt32Type(), show_args, 1, 0 
+	)); 
+	LLVMTypeRef min_max_args[] = { LLVMInt32Type(), LLVMInt32Type() }; 
+	LLVMValueRef max = LLVMAddFunction(mod, "max", LLVMFunctionType(
+		LLVMInt32Type(), min_max_args, 2, 0
+	));
+	LLVMValueRef min = LLVMAddFunction(mod, "min", LLVMFunctionType(
+		LLVMInt32Type(), min_max_args, 2, 0
+	)); 
+
+	insert_LLVM_ref(show, FUNC_SYM, "show", table); 
+	insert_LLVM_ref(max, FUNC_SYM, "max", table);
+	insert_LLVM_ref(min, FUNC_SYM, "min", table);
+
     return table;
 }
 
