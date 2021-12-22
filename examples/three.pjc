@@ -1,10 +1,17 @@
 func Int: () => main:
-	var Int: sum = 0
-	for (var Int: i = 1 | i <= 3 | i = i + 1):
-		sum = add(sum, i)
-	show(sum) 
+	show(sumInRange(1, 10))
+	show(factorial(10))
 	ret 0
 
-func Int: (Int: x, Int: y) => add:
-	ret x + y
+func Int: (Int: start, Int: end) => sumInRange:
+	var Int: sum = 0 
+	for (var Int: i = start | i <= end | i = i + 1):
+		sum = sum + i
 
+	ret sum 
+
+func Int: (Int: x) => factorial:
+	if (x == 1):
+		ret 1 
+	else:
+		ret x * factorial(x-1)

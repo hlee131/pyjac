@@ -21,7 +21,8 @@ LLVMModuleRef generate_module(prog_ast_t program) {
 			ref_table->curr_func 	= 
             lookup(ref_table, function->children.func.identifier->name)->type.val_ref;
         
-		LLVMAppendBasicBlock(func_ref, "function-body"); 
+		LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func_ref, "function-body"); 
+		LLVMPositionBuilderAtEnd(builder, entry); 
 
         // allocate parameters on stack for mutability 
         int param_count = 0; 
@@ -38,6 +39,7 @@ LLVMModuleRef generate_module(prog_ast_t program) {
         // generate function body basic block 
 		foreach (function->children.func.block, curr) {
 			write_state(builder, curr->current_ele, ref_table); 
+			if (RET_CHECK(LLVMGetInsertBlock(builder))) break; 
 		}
 
         // cleanup: exit scope, check if return void is needed 
@@ -111,6 +113,7 @@ LLVMBasicBlockRef generate_bb(LLVMBuilderRef builder, block_ast_t block, symtab_
 	LLVMPositionBuilderAtEnd(builder, new_bb);
     foreach (block, curr) {
         write_state(builder, curr->current_ele, ref_table); 
+		if (RET_CHECK(LLVMGetInsertBlock(builder))) return new_bb; 
     }
 	return new_bb; 
 }
@@ -204,7 +207,8 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
     switch (state->kind) {
         case IF: {
 			LLVMBasicBlockRef curr_bb = LLVMGetInsertBlock(builder); 
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-if");
+            // LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-if");
+			LLVMBasicBlockRef merge_bb = NULL; 
             foreach (state->children.if_tree, curr) {
 				if_pair_t* pair = curr->current_ele; 
 				LLVMPositionBuilderAtEnd(builder, curr_bb); 
@@ -222,15 +226,21 @@ void write_state(LLVMBuilderRef builder, state_ast_t* state, symtab_t* ref_table
 					LLVMBuildCondBr(builder, condition, t, f); 
 					// keeps track where to insert the next conditional or merge branch 
 					curr_bb = f; 
-					// merge true branch into the merge basic block 
-					LLVMPositionBuilderAtEnd(builder, t);
-					LLVMBuildBr(builder, merge_bb); 
+					// check if merge needed 
+					if (!RET_CHECK(t)) {
+						if (!merge_bb) merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-if");  
+						LLVMPositionBuilderAtEnd(builder, t);
+						LLVMBuildBr(builder, merge_bb); 
+					}
 				}
             }
-            // merge into the next statement by creating an empty basic block the next statement adds to 
-            LLVMPositionBuilderAtEnd(builder, curr_bb);
-            LLVMBuildBr(builder, merge_bb); 
-			LLVMPositionBuilderAtEnd(builder, merge_bb);
+            // check if merge needed 
+			if (!RET_CHECK(curr_bb)) {
+				if (!merge_bb) merge_bb = LLVMAppendBasicBlock(ref_table->curr_func, "merge-if");
+				LLVMPositionBuilderAtEnd(builder, curr_bb);
+            	LLVMBuildBr(builder, merge_bb); 
+			}
+			if (merge_bb) LLVMPositionBuilderAtEnd(builder, merge_bb);
             return; 
         }
         case FOR: {

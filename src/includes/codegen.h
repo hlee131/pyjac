@@ -5,6 +5,9 @@
 #include "ast.h"
 #include "symtab.h"
 
+// check if most recent instruction is a return 
+#define RET_CHECK(most_recent_bb) (LLVMGetInstructionOpcode(LLVMGetLastInstruction(most_recent_bb)) == LLVMRet)
+
 LLVMModuleRef generate_module(prog_ast_t program);
 LLVMTypeRef get_LLVM_type(type_node_t* type);
 LLVMValueRef alloca_at_entry(struct symtab_s* ref_table, LLVMTypeRef type, char* name, LLVMBuilderRef builder); 
