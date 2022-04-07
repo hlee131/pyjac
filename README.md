@@ -27,3 +27,4 @@ After type checking, LLVM IR is generated using the AST. LLVM IR allows for furt
 | Garbage Collection | Tabs can be spaces | Casting |
 | ternary operator, negation, bitwise logic, shortcut assignment, negative numbers, skip keyword | Expand runtime library (io, math, etc.) | First class functions |
 | | | Lazy evaluation |
+| | | Clean up codebase |
