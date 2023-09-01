@@ -20,6 +20,15 @@ In the type checker, error handling is implemented with a `error` subtype. This 
 ## Intermediate Code 
 After type checking, LLVM IR is generated using the AST. LLVM IR allows for further optimizations. 
 
+## Demo
+
+Notes: 
+- `make` generates a compiler called `pcc`
+- when compiling with `pcc` the produced executable is called `out` by default
+
+https://github.com/hlee131/pyjac/assets/59949027/868542bc-9fd1-4e6a-a02d-1db299331335
+
+
 ## Improvements Board 
 | Immediate Tasks | Eventual Tasks | Low Priority Features | 
 |-----------------|----------------|-----------------------|
