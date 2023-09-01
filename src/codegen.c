@@ -53,8 +53,12 @@ LLVMModuleRef generate_module(prog_ast_t program) {
 // allocate variables in entry block because memory to register optimizations only 
 // scan the function's entry block 
 LLVMValueRef alloca_at_entry(struct symtab_s* ref_table, LLVMTypeRef type, char* name, LLVMBuilderRef builder) {
-    LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(ref_table->curr_func)); 
-    LLVMBuildAlloca(builder, type, name); 
+    LLVMBasicBlockRef old_position = LLVMGetInsertBlock(builder);
+    LLVMBasicBlockRef entry_bb = LLVMGetEntryBasicBlock(ref_table->curr_func);
+    LLVMPositionBuilder(builder, entry_bb, LLVMGetFirstInstruction(entry_bb)); 
+    LLVMValueRef return_val = LLVMBuildAlloca(builder, type, name); 
+    LLVMPositionBuilderAtEnd(builder, old_position); 
+    return return_val;
 }
 
 symtab_t* make_llvm_symtab(prog_ast_t program, LLVMModuleRef mod) {
